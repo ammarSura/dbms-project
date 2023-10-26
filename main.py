@@ -1,26 +1,15 @@
-from logging.config import dictConfig
-
-dictConfig({
-    'version': 1,
-    'formatters': {'default': {
-        'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
-    }},
-    'handlers': {'wsgi': {
-        'class': 'logging.StreamHandler',
-        'stream': 'ext://flask.logging.wsgi_errors_stream',
-        'formatter': 'default'
-    }},
-    'root': {
-        'level': 'INFO',
-        'handlers': ['wsgi']
-    }
-})
-
 from flask import Flask, request
 from flask import render_template
-import sys
+from psycopg import Cursor
+from logging_config import logging_config
+import logging
+from psycopg_pool import ConnectionPool
+from db_utils import run_query, create_pool
+
+pool = create_pool()
 
 app = Flask(__name__)
+app.config.from_pyfile('env.py')
 
 @app.route('/')
 def hello_world():
