@@ -9,7 +9,7 @@ create_table_lst = [
             name VARCHAR(100) NOT NULL,
             picture_url VARCHAR(150),
             email VARCHAR(100) NOT NULL UNIQUE,
-            password VARCHAR(20) NOT NULL
+            password VARCHAR(20) NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -105,5 +105,10 @@ create_table_lst = [
     """
 ]
 
+create_index_lst = [
+    """
+        CREATE INDEX listing_price ON listing(price)
+    """
+]
 for query in create_table_lst:
     run_query(pool, lambda cur: cur.execute(query))
