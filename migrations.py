@@ -18,7 +18,6 @@ create_table_lst = [
     """
         CREATE TABLE IF NOT EXISTS host (
             id SERIAL PRIMARY KEY,
-            host_since DATE,
             about VARCHAR(500),
             response_time VARCHAR(50),
             response_rate NUMERIC(5, 2),
@@ -70,7 +69,6 @@ create_table_lst = [
     """
         CREATE TABLE IF NOT EXISTS review (
             id SERIAL PRIMARY KEY,
-            date DATE NOT NULL,
             comments VARCHAR(500),
             listing_id INT NOT NULL,
             reviewer_id INT NOT NULL,
@@ -127,6 +125,31 @@ create_index_lst = [
         CREATE INDEX IF NOT EXISTS review_reviewer_id ON review(reviewer_id)
     """
 ]
+
+create_materialized_view_lst = [
+    """
+        CREATE MATERIALIZED VIEW best_listings AS
+        SELECT listing.id, listing."name", listing.picture_url, price, neighborhood, review_rating, review."comments", review.reviewer_id, min(review.created_at) as latest_review FROM listing
+        LEFT JOIN review ON listing.id = review.listing_id
+        LEFT JOIN users u on u.id = review.reviewer_id
+        GROUP BY listing.id, review.reviewer_id, review."comments"
+        ORDER BY review_rating DESC
+        LIMIT 200;
+    """,
+    """
+        CREATE MATERIALIZED VIEW best_hosts AS
+        SELECT h.id, avg(l.review_rating), h.created_at, u."name", u.picture_url FROM "host" h
+        LEFT JOIN listing l on l.host_id = h.id
+        LEFT JOIN users u on u.id = h.user_id
+        WHERE h.is_super_host = true
+        GROUP BY h.id, u."name", u.picture_url
+        ORDER BY avg DESC
+        LIMIT 200;
+    """
+    # G
+    ,
+
+]
 for query in create_table_lst:
     try:
         run_query(pool, lambda cur: cur.execute(query))
@@ -136,6 +159,13 @@ for query in create_table_lst:
         break
 
 for query in create_index_lst:
+    try:
+        run_query(pool, lambda cur: cur.execute(query))
+    except Exception as e:
+        print(e)
+        print(query)
+        break
+for query in create_materialized_view_lst:
     try:
         run_query(pool, lambda cur: cur.execute(query))
     except Exception as e:
