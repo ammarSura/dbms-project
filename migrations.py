@@ -24,7 +24,7 @@ create_table_lst = [
             acceptance_rate NUMERIC(5, 2),
             is_super_host BOOLEAN,
             identity_verified BOOLEAN,
-            user_id INT,
+            user_id INT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT fk_user
@@ -99,6 +99,10 @@ create_table_lst = [
             FOREIGN KEY(listing_id)
                 REFERENCES listing
         )
+    """,
+    """
+        ALTER TABLE host
+        ALTER COLUMN user_id SET NOT NULL;
     """
 ]
 
@@ -128,7 +132,7 @@ create_index_lst = [
 
 create_materialized_view_lst = [
     """
-        CREATE MATERIALIZED VIEW best_listings AS
+        CREATE MATERIALIZED VIEW IF NOT EXISTS best_listings AS
         SELECT listing.id, listing."name", listing.picture_url, price, neighborhood, review_rating, review."comments", review.reviewer_id, min(review.created_at) as latest_review FROM listing
         LEFT JOIN review ON listing.id = review.listing_id
         LEFT JOIN users u on u.id = review.reviewer_id
@@ -137,7 +141,7 @@ create_materialized_view_lst = [
         LIMIT 200;
     """,
     """
-        CREATE MATERIALIZED VIEW best_hosts AS
+        CREATE MATERIALIZED VIEW IF NOT EXISTS best_hosts AS
         SELECT h.id, avg(l.review_rating), h.created_at, u."name", u.picture_url FROM "host" h
         LEFT JOIN listing l on l.host_id = h.id
         LEFT JOIN users u on u.id = h.user_id
@@ -146,7 +150,6 @@ create_materialized_view_lst = [
         ORDER BY avg DESC
         LIMIT 200;
     """
-    # G
     ,
 
 ]
