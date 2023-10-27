@@ -107,7 +107,22 @@ create_table_lst = [
 
 create_index_lst = [
     """
+        CREATE INDEX host_user_id ON host(user_id)
+    """,
+    """
+        CREATE INDEX listing_host_id ON listing(host_id)
+    """,
+    """
         CREATE INDEX listing_price ON listing(price)
+    """,
+    """
+        CREATE INDEX listing_neighbourhood ON listing(neighbourhood)
+    """,
+    """
+        CREATE INDEX review_listing_id ON review(listing_id)
+    """,
+    """
+        CREATE INDEX review_reviewer_id ON review(reviewer_id)
     """
 ]
 for query in create_table_lst:
