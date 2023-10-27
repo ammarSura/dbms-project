@@ -19,7 +19,6 @@ create_table_lst = [
         CREATE TABLE IF NOT EXISTS host (
             id SERIAL PRIMARY KEY,
             host_since DATE,
-            location VARCHAR(150),
             about VARCHAR(500),
             response_time VARCHAR(50),
             response_rate NUMERIC(5, 2),
@@ -70,7 +69,7 @@ create_table_lst = [
     """,
     """
         CREATE TABLE IF NOT EXISTS review (
-            id PRIMARY KEY,
+            id SERIAL PRIMARY KEY,
             date DATE NOT NULL,
             comments VARCHAR(500),
             listing_id INT NOT NULL,
@@ -79,7 +78,7 @@ create_table_lst = [
             CONSTRAINT fk_listing
                 FOREIGN KEY(listing_id)
                     REFERENCES listing
-                    ON DELETE CASCADE
+                    ON DELETE CASCADE,
             CONSTRAINT fk_reviewer_id
                 FOREIGN KEY(reviewer_id)
                     REFERENCES users
@@ -97,7 +96,7 @@ create_table_lst = [
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT fk_booker
             FOREIGN KEY(booker_id)
-                REFERENCES users
+                REFERENCES users,
         CONSTRAINT fk_listing
             FOREIGN KEY(listing_id)
                 REFERENCES listing
@@ -107,23 +106,39 @@ create_table_lst = [
 
 create_index_lst = [
     """
-        CREATE INDEX host_user_id ON host(user_id)
+        CREATE INDEX IF NOT EXISTS host_user_id ON host(user_id)
     """,
     """
-        CREATE INDEX listing_host_id ON listing(host_id)
+        CREATE INDEX IF NOT EXISTS listing_host_id ON listing(host_id)
     """,
     """
-        CREATE INDEX listing_price ON listing(price)
+        CREATE INDEX IF NOT EXISTS listing_price ON listing(price)
     """,
     """
-        CREATE INDEX listing_neighbourhood ON listing(neighbourhood)
+        CREATE INDEX IF NOT EXISTS listing_neighborhood ON listing(neighborhood)
     """,
     """
-        CREATE INDEX review_listing_id ON review(listing_id)
+        CREATE INDEX IF NOT EXISTS listing_bathrooms ON listing(bathrooms)
     """,
     """
-        CREATE INDEX review_reviewer_id ON review(reviewer_id)
+        CREATE INDEX IF NOT EXISTS review_listing_id ON review(listing_id)
+    """,
+    """
+        CREATE INDEX IF NOT EXISTS review_reviewer_id ON review(reviewer_id)
     """
 ]
 for query in create_table_lst:
-    run_query(pool, lambda cur: cur.execute(query))
+    try:
+        run_query(pool, lambda cur: cur.execute(query))
+    except Exception as e:
+        print(e)
+        print(query)
+        break
+
+for query in create_index_lst:
+    try:
+        run_query(pool, lambda cur: cur.execute(query))
+    except Exception as e:
+        print(e)
+        print(query)
+        break
