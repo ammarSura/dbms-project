@@ -103,6 +103,14 @@ create_table_lst = [
     """
         ALTER TABLE host
         ALTER COLUMN user_id SET NOT NULL;
+    """,
+    """
+        ALTER TABLE listing
+        DROP COLUMN IF EXISTS review_cleanliness,
+        DROP COLUMN IF EXISTS review_checking,
+        DROP COLUMN IF EXISTS review_communication,
+        DROP COLUMN IF EXISTS review_location,
+        DROP COLUMN IF EXISTS review_value;
     """
 ]
 
