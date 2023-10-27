@@ -56,7 +56,12 @@ create_table_lst = [
             neighborhood_overview VARCHAR(500),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            revie stuff
+            review_rating NUMERIC,
+            review_cleanliness NUMERIC,
+            review_checking NUMERIC,
+            review_communication NUMERIC,
+            review_location NUMERIC,
+            review_value NUMERIC,
             CONSTRAINT fk_host
                 FOREIGN KEY(host_id)
 	                REFERENCES host
