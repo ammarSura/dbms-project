@@ -1,7 +1,11 @@
 from flask import Flask, request, abort
 from flask import render_template
-from db_utils import run_query, create_pool
-from user_methods import get_user, post_user
+from db_utils import create_pool
+from get_host import get_host
+from get_listing import get_listing
+from get_user import get_user
+from post_host import post_host
+from post_user import post_user
 import sys
 
 pool = create_pool()
@@ -16,19 +20,47 @@ def get_root():
 
 @app.route('/users/<id>', methods=['GET'])
 def get_user_handler(id):
-    user = run_query(pool, lambda cur: get_user(cur, { 'id': id }))
-    return render_template('index.html', message='Query params: ' + str(user['id']))
+    user = get_user(pool, {'id': id})
+    if(user == None):
+        abort(404, 'User not found')
+    return render_template('index.html', message='Query params: ' + str(user['name']))
+
 @app.route('/login', methods=['POST'])
 def login_handler():
     args_dic = request.json
-    result = run_query(pool, lambda cur: post_user(cur, args_dic))
+    result = post_user(pool, args_dic, app.logger)
     if(result == None):
         abort(400, 'Missing param')
     else:
         return render_template('index.html', message=result)
 
-@app.route('/host', methods=['GET'])
-def post_handler():
-    app.logger.info('Received this request method: %s', request.method)
-    app.logger.info('Received this request body: %s', request.get_json().get('name'))
-    return render_template('index.html', message='POST request')
+@app.route('/host/<id>', methods=['GET'])
+def host_get_handler(id):
+    host = get_host(pool, {
+        'id': id
+    })
+    return render_template('index.html', message='Query params: ' + str(host['id']))
+
+@app.route('/host', methods=['POST'])
+def host_post_handler():
+    args_dic = request.json
+    result = post_host(pool, args_dic, app.logger)
+    if(result == None):
+        abort(400, 'Missing param')
+    else:
+        return render_template('index.html', message=result)
+
+@app.route('/listing', methods=['GET'])
+def listings_get_handler():
+    args_dic = {
+        'count': request.args.get('count') or 10
+    }
+    listings = get_listing(pool, args_dic)
+    return render_template('index.html', message='Query params: ' + str(len(listings)))
+
+@app.route('/listing/<id>', methods=['GET'])
+def listing_get_handler(id):
+    listing = get_listing(pool, {
+        'id': id
+    })
+    return render_template('index.html', message='Query params: ' + str(listing['id']))
