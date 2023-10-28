@@ -48,7 +48,7 @@ create_table_lst = [
             bedrooms SMALLINT,
             beds SMALLINT NOT NULL,
             bed_type VARCHAR(50) NOT NULL,
-            amenities VARCHAR(75) NOT NULL,
+            amenities VARCHAR(75)[] NOT NULL,
             host_id INT NOT NULL,
             neighborhood VARCHAR(50),
             neighborhood_overview VARCHAR(500),
