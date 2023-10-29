@@ -42,14 +42,12 @@ class MethodTester(unittest.TestCase):
         equality_check(test_item, fetched_item)
         return posted_item_id
 
-    def _test_get_items(self, test_gen: Callable[[Faker], dict], equality_check: Callable[[dict, dict], bool], post_item: Callable[[Connection, dict, logging.Logger], int or None], get_item: Callable[[Connection, dict], dict or list or None]):
-        result = list(map(lambda _: self._test_get_item(test_gen, equality_check, post_item, get_item), [0] * 10))
-        listings = get_item(self.pool, {
-            'count': 10
-        })
-        self.assertGreaterEqual(len(listings), 10)
-        no_count_listings = get_item(self.pool, {})
-        self.assertIsInstance(no_count_listings, dict)
+    def _test_get_items(self, test_gen: Callable[[Faker], dict], equality_check: Callable[[dict, dict], bool], post_item: Callable[[Connection, dict, logging.Logger], int or None], get_item: Callable[[Connection, dict], dict or list or None], args_dic: dict):
+        result = list(map(lambda _: self._test_get_item(test_gen, equality_check, post_item, get_item), [0] * 11))
+        listings = get_item(self.pool, args_dic)
+        self.assertEqual(len(listings), 11)
+
+        return listings
 
     def _test_get_item_invalid_param(self, test_gen: Callable[[Faker], dict], post_item: Callable[[Connection, dict], id or None], get_item: Callable[[Connection, dict], dict or list or None]):
         test_item = test_gen(self.fake)
@@ -57,7 +55,7 @@ class MethodTester(unittest.TestCase):
         fetched_items = get_item(self.pool, {
             'id': self.fake.random_int(0, 1000000)
         })
-        fetched_item = fetched_items[0] if isinstance(fetched_items, list) else fetched_items
+        fetched_item = fetched_items[0] if isinstance(fetched_items, list) and len(fetched_items) > 0 else fetched_items
         if(fetched_item is not None):
             self.assertNotEqual(fetched_item['id'], posted_item_id)
 
@@ -81,7 +79,6 @@ class MethodTester(unittest.TestCase):
         del new_item[param]
         posted_item_id = post_item(self.pool, new_item, self.logger)
         self.assertIsNotNone(posted_item_id)
-
 
 class TestUserMethods(MethodTester):
     def user_equality_check(self, test_user: dict, fetched_user: dict or None):
@@ -167,7 +164,26 @@ class TestListingMethods(MethodTester):
     def test_post_host_missing_param(self):
         self._test_post_item_missing_param('bedrooms', self.create_fake_listing_with_host_id(), post_listing)
     def test_get_listings(self):
-        self._test_get_items(self.create_fake_listing_with_host_id(), self.listing_equality_check, post_listing, get_listing)
+        args_dic = {
+            'count': 11,
+        }
+        listings = self._test_get_items(
+            self.create_fake_listing_with_host_id(),
+            self.listing_equality_check,
+            post_listing,
+            get_listing,
+            args_dic
+        )
+
+        listings_with_args = get_listing(self.pool, {
+            'room_type': listings[0]['room_type'],
+            'count': 10
+        })
+        self.assertGreaterEqual(len(listings_with_args), 1)
+
+        found_item = next(item for item in listings_with_args if item["id"] == listings[0]["id"])
+        self.assertIsNotNone(found_item)
+        self.assertEqual(found_item['id'], listings[0]['id'])
 
 if __name__ == '__main__':
     unittest.main()
