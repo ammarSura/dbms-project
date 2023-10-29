@@ -1,5 +1,6 @@
 from psycopg import Cursor
-from db_utils import run_query, create_pool
+
+from db_utils import create_pool, run_query
 
 pool = create_pool()
 create_table_lst = [
@@ -7,89 +8,88 @@ create_table_lst = [
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
+            is_host BOOL DEFAULT FALSE,
             picture_url VARCHAR(150),
             email VARCHAR(100) NOT NULL UNIQUE,
-            password VARCHAR(20) NOT NULL,
+            password VARCHAR(32) NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
+    """,
     """
-    ,
-    """
-        CREATE TABLE IF NOT EXISTS host (
+        CREATE TABLE IF NOT EXISTS hosts (
             id SERIAL PRIMARY KEY,
-            about VARCHAR(500),
-            response_time VARCHAR(50),
-            response_rate NUMERIC(5, 2),
-            acceptance_rate NUMERIC(5, 2),
-            is_super_host BOOLEAN,
-            identity_verified BOOLEAN,
             user_id INT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            location VARCHAR(250) DEFAULT NULL,
+            neighbourhood VARCHAR(250) DEFAULT NULL,
+            about TEXT DEFAULT NULL,
+            response_time VARCHAR(50) DEFAULT NULL,
+            response_rate NUMERIC(5, 2) DEFAULT NULL,
+            acceptance_rate NUMERIC(5, 2) DEFAULT NULL,
+            is_superhost BOOLEAN DEFAULT FALSE,
+            identity_verified BOOLEAN DEFAULT FALSE,
+            host_since TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT fk_user
                 FOREIGN KEY(user_id)
 	                REFERENCES users
                     ON DELETE CASCADE
-        )
-    """
-    ,
-    """
-       CREATE TABLE IF NOT EXISTS listing (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(150) NOT NULL,
-            picture_url VARCHAR(150) NOT NULL,
-            coors POINT NOT NULL,
-            price NUMERIC(10, 2) NOT NULL,
-            property_type VARCHAR(50) NOT NULL,
-            room_type VARCHAR(50) NOT NULL,
-            accommodates SMALLINT NOT NULL,
-            bathrooms VARCHAR(50),
-            bedrooms SMALLINT,
-            beds SMALLINT NOT NULL,
-            bed_type VARCHAR(50) NOT NULL,
-            amenities VARCHAR(75)[] NOT NULL,
-            host_id INT NOT NULL,
-            neighborhood VARCHAR(50),
-            neighborhood_overview VARCHAR(500),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            review_rating NUMERIC(3, 2),
-            review_cleanliness NUMERIC(3, 2),
-            review_checking NUMERIC(3, 2),
-            review_communication NUMERIC(3, 2),
-            review_location NUMERIC(3, 2),
-            review_value NUMERIC(3, 2),
-            CONSTRAINT fk_host
-                FOREIGN KEY(host_id)
-	                REFERENCES host
-                    ON DELETE CASCADE
-        )
+        );
     """,
     """
-        CREATE TABLE IF NOT EXISTS review (
-            id SERIAL PRIMARY KEY,
-            comments VARCHAR(500),
-            listing_id INT NOT NULL,
+        CREATE TABLE IF NOT EXISTS listings (
+            id BIGSERIAL PRIMARY KEY,
+            host_id INT NOT NULL,
+            name VARCHAR(150) NOT NULL,
+            description TEXT DEFAULT NULL,
+            location VARCHAR(100) NOT NULL,
+            neighbourhood VARCHAR(250) DEFAULT NULL,
+            neighbourhood_overview TEXT DEFAULT NULL,
+            coord POINT NOT NULL,
+            property_type VARCHAR(50) NOT NULL,
+            room_type VARCHAR(50) NOT NULL,
+            accommodates SMALLINT DEFAULT 1,
+            bathrooms VARCHAR(50) DEFAULT NULL,
+            bedrooms SMALLINT DEFAULT 1,
+            beds SMALLINT DEFAULT 1,
+            amenities VARCHAR(300)[] DEFAULT NULL,
+            price NUMERIC(10, 2) NOT NULL,
+            min_nights SMALLINT DEFAULT 1,
+            max_nights SMALLINT DEFAULT 365,
+            rating NUMERIC(3, 2) DEFAULT 0.00,
+            picture_url VARCHAR(150) DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT fk_host
+                FOREIGN KEY(host_id)
+	                REFERENCES hosts
+                    ON DELETE CASCADE
+        );
+    """,
+    """
+        CREATE TABLE IF NOT EXISTS reviews (
+            id BIGSERIAL PRIMARY KEY,
+            listing_id BIGINT NOT NULL,
             reviewer_id INT NOT NULL,
+            comments TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT fk_listing
                 FOREIGN KEY(listing_id)
-                    REFERENCES listing
+                    REFERENCES listings
                     ON DELETE CASCADE,
             CONSTRAINT fk_reviewer_id
                 FOREIGN KEY(reviewer_id)
                     REFERENCES users
-        )
+        );
     """,
     """
-        CREATE TABLE IF NOT EXISTS booking (
+        CREATE TABLE IF NOT EXISTS bookings (
         id SERIAL PRIMARY KEY,
+        booker_id INT NOT NULL,
+        listing_id BIGINT NOT NULL,
         start_date DATE NOT NULL,
         end_date DATE NOT NULL,
         cost NUMERIC(10, 2) NOT NULL,
-        booker_id INT NOT NULL,
-        listing_id INT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT fk_booker
@@ -97,20 +97,8 @@ create_table_lst = [
                 REFERENCES users,
         CONSTRAINT fk_listing
             FOREIGN KEY(listing_id)
-                REFERENCES listing
-        )
-    """,
-    """
-        ALTER TABLE host
-        ALTER COLUMN user_id SET NOT NULL;
-    """,
-    """
-        ALTER TABLE listing
-        DROP COLUMN IF EXISTS review_cleanliness,
-        DROP COLUMN IF EXISTS review_checking,
-        DROP COLUMN IF EXISTS review_communication,
-        DROP COLUMN IF EXISTS review_location,
-        DROP COLUMN IF EXISTS review_value;
+                REFERENCES listings
+        );
     """
 ]
 
@@ -157,8 +145,7 @@ create_materialized_view_lst = [
         GROUP BY h.id, u."name", u.picture_url
         ORDER BY avg DESC
         LIMIT 200;
-    """
-    ,
+    """,
 
 ]
 for query in create_table_lst:
