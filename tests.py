@@ -164,10 +164,6 @@ class TestListingMethods(MethodTester):
         delete_keys(fetched_listing, [
                     'id', 'created_at', 'updated_at', 'price', 'rating', 'coord', 'amenities'])
         delete_keys(test_listing, ['price', 'rating', 'coord', 'amenities'])
-
-        x = set(fetched_listing.items())
-        y = set(test_listing.items())
-        print('qwe', x.difference(y), y.difference(x))
         self.assertDictEqual(test_listing, fetched_listing)
 
     def create_fake_listing_with_host_id(self):
