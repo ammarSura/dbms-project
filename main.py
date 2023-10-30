@@ -1,14 +1,15 @@
 
 import os
-import sys
 from hashlib import md5
-from get_neighbourhoods import get_neighbourhoods
+
+from flask import Flask, abort, redirect, render_template, request, url_for
 from psycopg import sql
-from flask import Flask, abort, render_template, request, url_for
 from werkzeug.utils import secure_filename
+
 from db_utils import create_pool, query_append_check
 from get_host import get_host
 from get_listing import get_listing
+from get_neighbourhoods import get_neighbourhoods
 from get_user import get_user
 from post_host import post_host
 from post_user import post_user
@@ -26,9 +27,9 @@ def get_listings():
         'page': int(request.args.get('page')) if request.args.get('page') else 0,
         'neighborhood': request.args.get('city') or None,
         'room_type': request.args.get('room_type') or None,
-        'bedrooms': int(request.args.get('bedrooms')) if request.args.get('bedrooms')  else None,
+        'bedrooms': int(request.args.get('bedrooms')) if request.args.get('bedrooms') else None,
         'beds': int(request.args.get('beds')) if request.args.get('beds') else None,
-        'review_rating': int(request.args.get('review_rating')) if(request.args.get('review_rating')) else None,
+        'review_rating': int(request.args.get('review_rating')) if (request.args.get('review_rating')) else None,
     }
     amenities = request.args.getlist('amenities') or None
     query_lst_args = {
@@ -39,19 +40,19 @@ def get_listings():
         'check_out': request.args.get('check_out') or None,
     }
     extra_query = []
-    if(query_lst_args['is_super_host']):
+    if (query_lst_args['is_super_host']):
         extra_query.append(
             sql.SQL("\nINNER JOIN host ON host.id = listing.host_id")
         )
         extra_query.append(
             sql.SQL("\nWHERE host.is_super_host = %(is_super_host)s")
         )
-    if(query_lst_args['min_price']):
+    if (query_lst_args['min_price']):
         query_append_check(extra_query)
         extra_query.append(
             sql.SQL("price >= %(min_price)s")
         )
-    if(query_lst_args['max_price']):
+    if (query_lst_args['max_price']):
         query_append_check(extra_query)
         extra_query.append(
             sql.SQL("price <= %(max_price)s")
@@ -76,9 +77,9 @@ def get_listings():
             query_append_check(extra_query)
             extra_query.append(
                 sql.SQL("{} = ANY(amenities)")
-                    .format(
-                        sql.Placeholder('amenity' + str(i))
-                    )
+                .format(
+                    sql.Placeholder('amenity' + str(i))
+                )
             )
             query_lst_args['amenity' + str(i)] = amenity
     args_dic['extra_query'] = {
@@ -87,10 +88,12 @@ def get_listings():
     }
     listings = get_listing(pool, args_dic)
     neighbourhoods = get_neighbourhoods(pool)
-    neighbourhood_lst = [neighbourhood['neighborhood'] for neighbourhood in neighbourhoods]
+    neighbourhood_lst = [neighbourhood['neighborhood']
+                         for neighbourhood in neighbourhoods]
     listings_with_starts = []
     for listing in listings:
-        listing['stars'] = "⭐"*int(listing['review_rating']) if listing['review_rating'] else "No reviews"
+        listing['stars'] = "⭐"*int(listing['review_rating']
+                                   ) if listing['review_rating'] else "No reviews"
         listings_with_starts.append(listing)
     return render_template(
         'index.html',
@@ -98,7 +101,7 @@ def get_listings():
         user_id=request.args.get('user_id'),
         cities=neighbourhood_lst,
         selected_city=args_dic['neighborhood'],
-        )
+    )
 
 
 @app.route('/users/<id>', methods=['GET'])

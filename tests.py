@@ -1,18 +1,21 @@
+import logging
+import unittest
 from decimal import Decimal
 from typing import Callable
-import unittest
+
+from faker import Faker
 from psycopg import Connection
+
+from db_utils import create_pool
 from get_host import get_host
 from get_listing import get_listing
 from get_user import get_user
 from post_host import post_host
 from post_listing import post_listing
 from post_user import post_user
-from db_utils import create_pool
-from faker import Faker
-import logging
+from test_utils import (create_fake_host, create_fake_listing,
+                        create_fake_user, delete_keys)
 
-from test_utils import create_fake_host, create_fake_listing, create_fake_user, delete_keys
 
 class MethodTester(unittest.TestCase):
     @classmethod
@@ -38,12 +41,14 @@ class MethodTester(unittest.TestCase):
         fetched_items = get_item(self.pool, {
             'id': posted_item_id
         })
-        fetched_item = fetched_items[0] if isinstance(fetched_items, list) else fetched_items
+        fetched_item = fetched_items[0] if isinstance(
+            fetched_items, list) else fetched_items
         equality_check(test_item, fetched_item)
         return posted_item_id
 
     def _test_get_items(self, test_gen: Callable[[Faker], dict], equality_check: Callable[[dict, dict], bool], post_item: Callable[[Connection, dict, logging.Logger], int or None], get_item: Callable[[Connection, dict], dict or list or None], args_dic: dict):
-        result = list(map(lambda _: self._test_get_item(test_gen, equality_check, post_item, get_item), [0] * 11))
+        result = list(map(lambda _: self._test_get_item(
+            test_gen, equality_check, post_item, get_item), [0] * 11))
         listings = get_item(self.pool, args_dic)
         self.assertEqual(len(listings), 11)
 
@@ -55,8 +60,9 @@ class MethodTester(unittest.TestCase):
         fetched_items = get_item(self.pool, {
             'id': self.fake.random_int(0, 1000000)
         })
-        fetched_item = fetched_items[0] if isinstance(fetched_items, list) and len(fetched_items) > 0 else fetched_items
-        if(fetched_item is not None):
+        fetched_item = fetched_items[0] if isinstance(
+            fetched_items, list) and len(fetched_items) > 0 else fetched_items
+        if (fetched_item is not None):
             self.assertNotEqual(fetched_item['id'], posted_item_id)
 
     def _test_post_item(self, test_gen: Callable[[Faker], dict], post_item: Callable[[Connection, dict, logging.Logger], int or None], get_item: Callable[[Connection, dict], dict or list or None]):
@@ -66,19 +72,23 @@ class MethodTester(unittest.TestCase):
         fetched_items = get_item(self.pool, {
             'id': posted_item_id
         })
-        fetched_item = fetched_items[0] if isinstance(fetched_items, list) else fetched_items
+        fetched_item = fetched_items[0] if isinstance(
+            fetched_items, list) else fetched_items
         self.assertIsNotNone(fetched_item)
         self.assertEqual(fetched_item['id'], posted_item_id)
+
     def _test_post_item_missing_required_param(self, required_param: str, test_gen: Callable[[Faker], dict], post_item: Callable[[Connection, dict, logging.Logger], int or None]):
         new_item = test_gen(self.fake)
         new_item[required_param] = None
         posted_item_id = post_item(self.pool, new_item, self.logger)
         self.assertIsNone(posted_item_id)
+
     def _test_post_item_missing_param(self, param: str, test_gen: Callable[[Faker], dict], post_item: Callable[[Connection, dict, logging.Logger], int or None]):
         new_item = test_gen(self.fake)
         del new_item[param]
         posted_item_id = post_item(self.pool, new_item, self.logger)
         self.assertIsNotNone(posted_item_id)
+
 
 class TestUserMethods(MethodTester):
     def user_equality_check(self, test_user: dict, fetched_user: dict or None):
@@ -93,15 +103,22 @@ class TestUserMethods(MethodTester):
         self.assertDictEqual(test_user, fetched_user)
 
     def test_get_user(self):
-        self._test_get_item(create_fake_user, self.user_equality_check, post_user, get_user)
+        self._test_get_item(
+            create_fake_user, self.user_equality_check, post_user, get_user)
+
     def test_get_user_missing_param(self):
-        self._test_get_item_invalid_param(create_fake_user, post_user, get_user)
+        self._test_get_item_invalid_param(
+            create_fake_user, post_user, get_user)
+
     def test_post_user(self):
         self._test_post_item(create_fake_user, post_user, get_user)
+
     def test_post_user_missing_required_param(self):
         return self._test_post_item_missing_required_param('name', create_fake_user, post_user)
+
     def test_post_user_missing_param(self):
         return self._test_post_item_missing_param('picture_url', create_fake_user, post_user)
+
 
 class TestHostMethods(MethodTester):
     def host_equality_check(self, test_host: dict, fetched_host: dict or None):
@@ -123,15 +140,25 @@ class TestHostMethods(MethodTester):
         return lambda faker: create_fake_host(faker, test_user_id)
 
     def test_get_host(self):
-        self._test_get_item(self.create_fake_host_with_user_id(), self.host_equality_check, post_host, get_host)
+        self._test_get_item(self.create_fake_host_with_user_id(
+        ), self.host_equality_check, post_host, get_host)
+
     def test_get_host_missing_param(self):
-        self._test_get_item_invalid_param(self.create_fake_host_with_user_id(), post_host, get_host)
+        self._test_get_item_invalid_param(
+            self.create_fake_host_with_user_id(), post_host, get_host)
+
     def test_post_host(self):
-        self._test_post_item(self.create_fake_host_with_user_id(), post_host, get_host)
+        self._test_post_item(
+            self.create_fake_host_with_user_id(), post_host, get_host)
+
     def test_post_host_missing_required_param(self):
-        self._test_post_item_missing_required_param('user_id', self.create_fake_host_with_user_id(), post_host)
+        self._test_post_item_missing_required_param(
+            'user_id', self.create_fake_host_with_user_id(), post_host)
+
     def test_post_host_missing_param(self):
-        self._test_post_item_missing_param('about', self.create_fake_host_with_user_id(), post_host)
+        self._test_post_item_missing_param(
+            'about', self.create_fake_host_with_user_id(), post_host)
+
 
 class TestListingMethods(MethodTester):
     def listing_equality_check(self, test_listing: dict, fetched_listing: dict or None):
@@ -139,10 +166,14 @@ class TestListingMethods(MethodTester):
         self.assertIsNotNone(fetched_listing)
         self.assertIsNotNone(fetched_listing['created_at'])
         self.assertIsNotNone(fetched_listing['updated_at'])
-        self.assertAlmostEqual(fetched_listing['price'], Decimal(test_listing['price']))
-        self.assertAlmostEqual(fetched_listing['review_rating'], Decimal(test_listing['review_rating']))
-        self.assertListEqual(test_listing['amenities'], fetched_listing['amenities'])
-        delete_keys(fetched_listing, ['id', 'created_at', 'updated_at', 'price', 'review_rating', 'coors'])
+        self.assertAlmostEqual(
+            fetched_listing['price'], Decimal(test_listing['price']))
+        self.assertAlmostEqual(fetched_listing['review_rating'], Decimal(
+            test_listing['review_rating']))
+        self.assertListEqual(
+            test_listing['amenities'], fetched_listing['amenities'])
+        delete_keys(fetched_listing, [
+                    'id', 'created_at', 'updated_at', 'price', 'review_rating', 'coors'])
         delete_keys(test_listing, ['price', 'review_rating', 'coors'])
 
         self.assertDictEqual(test_listing, fetched_listing)
@@ -153,16 +184,27 @@ class TestListingMethods(MethodTester):
         new_host_id = post_host(self.pool, new_host, self.logger)
 
         return lambda faker: create_fake_listing(faker, test_user_id, new_host_id)
+
     def test_get_host(self):
-        self._test_get_item(self.create_fake_listing_with_host_id(), self.listing_equality_check, post_listing, get_listing)
+        self._test_get_item(self.create_fake_listing_with_host_id(
+        ), self.listing_equality_check, post_listing, get_listing)
+
     def test_get_host_missing_param(self):
-        self._test_get_item_invalid_param(self.create_fake_listing_with_host_id(), post_listing, get_listing)
+        self._test_get_item_invalid_param(
+            self.create_fake_listing_with_host_id(), post_listing, get_listing)
+
     def test_post_host(self):
-        self._test_post_item(self.create_fake_listing_with_host_id(), post_listing, get_listing)
+        self._test_post_item(
+            self.create_fake_listing_with_host_id(), post_listing, get_listing)
+
     def test_post_host_missing_required_param(self):
-        self._test_post_item_missing_required_param('host_id', self.create_fake_listing_with_host_id(), post_listing)
+        self._test_post_item_missing_required_param(
+            'host_id', self.create_fake_listing_with_host_id(), post_listing)
+
     def test_post_host_missing_param(self):
-        self._test_post_item_missing_param('bedrooms', self.create_fake_listing_with_host_id(), post_listing)
+        self._test_post_item_missing_param(
+            'bedrooms', self.create_fake_listing_with_host_id(), post_listing)
+
     def test_get_listings(self):
         args_dic = {
             'count': 11,
@@ -181,10 +223,11 @@ class TestListingMethods(MethodTester):
         })
         self.assertGreaterEqual(len(listings_with_args), 1)
 
-        found_item = next(item for item in listings_with_args if item["id"] == listings[0]["id"])
+        found_item = next(
+            item for item in listings_with_args if item["id"] == listings[0]["id"])
         self.assertIsNotNone(found_item)
         self.assertEqual(found_item['id'], listings[0]['id'])
 
+
 if __name__ == '__main__':
     unittest.main()
-
