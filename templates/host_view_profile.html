@@ -31,6 +31,22 @@
                     <h4 class="text-center">Profile</h4>
                 </div>
                 <div class="row mt-2">
+                    <div class="col-md-6">
+                        {% if message.host.get("is_superhost") %}
+                        <h4 class="text-start"><span class="badge rounded-pill text-bg-success">Supherhost!</span></h4>
+                        {% else %}
+                        <h4 class="text-start"><span class="badge rounded-pill text-bg-secondary">Not A Superhost :(</span></h4>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {% if message.host.get("identity_verified") %}
+                        <h4 class="text-end"><span class="badge rounded-pill text-bg-primary">Verified!</span></h4>
+                        {% else %}
+                        <h4 class="text-end"><span class="badge rounded-pill text-bg-secondary">Not Verified :(</span></h4>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mt-3">
                     <div class="col-md-4">
                         <label class="labels">Name</label>
                         <input disabled type="text" name="new_name" id="new_name" class="form-control" placeholder='{{ message.host_user.name }}' value='{{ message.host_user.name }}'>
@@ -49,23 +65,7 @@
                 <div class="row mt-2">
                     <div class="col-md-12">
                         <label class="labels">About</label>
-                        <p>{{ message.host.get("about") }}</p>
-                    </div>
-                </div>
-                <div class="row mt-4">
-                    <div class="col-md-6">
-                        {% if message.host.get("is_superhost") %}
-                        <h4><span class="badge rounded-pill text-bg-success">Supherhost!</span></h4>
-                        {% else %}
-                        <h4><span class="badge rounded-pill text-bg-secondary">Not A Superhost :(</span></h4>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6">
-                        {% if message.host.get("identity_verified") %}
-                        <h4><span class="badge rounded-pill text-bg-primary">Verified!</span></h4>
-                        {% else %}
-                        <h4><span class="badge rounded-pill text-bg-secondary">Not Verified :(</span></h4>
-                        {% endif %}
+                        <textarea disabled name="about" id="about" class="form-control" style="height: 250px;">{{ message.host.get("about") }}</textarea>
                     </div>
                 </div>
                 <div class="row mt-2">

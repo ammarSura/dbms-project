@@ -18,6 +18,8 @@ from get_user import get_user
 from post_host import post_host
 from post_user import post_user
 from update_host import update_host
+from update_user import update_user
+from get_booking import get_bookings
 
 pool = create_pool()
 
@@ -135,17 +137,22 @@ def listing_get_handler(id):
 @app.route('/users/<id>/profile', methods=['GET', "POST"])
 def get_user_profile_handler(id):
     if str(session.get("user_id")) != id:
-        print("here")
         return redirect("/")
 
     user = get_user(pool, {'id': id})
-    bookings = []  # get bookings
-    if (user == None):
+    bookings = get_bookings(pool, {'booker_id': id})
+    if user is None:
         abort(404, 'User not found')
 
     if request.method == "GET":
-        message = {"user": user, "bookings": bookings}
-        return render_template('user_profile.html', message=message, user=get_user_from_session(session))
+        message = {
+            "authenticated": session.get("authenticated"),
+            "user_id": session.get('user_id'),
+            "host_id": session.get("host_id"),
+            "user": user,
+            "bookings": bookings
+        }
+        return render_template('user_profile.html', message=message)
 
     if request.method == "POST":
         new_picture_url = request.files.get("new_profile_picture")
@@ -162,11 +169,14 @@ def get_user_profile_handler(id):
         new_email = request.form.get('new_email').strip()
         if not new_name or not new_email:
             message = {
+                "authenticated": session.get("authenticated"),
+                "user_id": session.get('user_id'),
+                "host_id": session.get("host_id"),
                 "error": "Enter name or email to update!",
                 "user": user,
                 "bookings": bookings,
             }
-            return render_template('user_profile.html', message=message, user=get_user_from_session(session))
+            return render_template('user_profile.html', message=message)
 
         old_password = request.form.get(
             'old_password').strip()
@@ -178,14 +188,15 @@ def get_user_profile_handler(id):
         if old_password:
             old_password = md5(old_password.encode("utf-8")).hexdigest()
             if old_password != user.get("password"):
-                print("here")
-                print(old_password)
                 message = {
+                    "authenticated": session.get("authenticated"),
+                    "user_id": session.get('user_id'),
+                    "host_id": session.get("host_id"),
                     "error": "Old password is incorrect! Please try again.",
                     "user": user,
                     "bookings": bookings,
                 }
-                return render_template('user_profile.html', message=message, user=get_user_from_session(session))
+                return render_template('user_profile.html', message=message)
             else:
                 if new_password:
                     new_password = md5(
@@ -194,24 +205,63 @@ def get_user_profile_handler(id):
                         confirm_password.encode("utf-8")).hexdigest()
                     if confirm_password != new_password:
                         message = {
+                            "authenticated": session.get("authenticated"),
+                            "user_id": session.get('user_id'),
+                            "host_id": session.get("host_id"),
                             "error": "New passwords don't match! Try again.",
                             "user": user,
                             "bookings": bookings,
                         }
-                        return render_template('user_profile.html', message=message, user=get_user_from_session(session))
+                        return render_template('user_profile.html', message=message)
                     else:
-                        # update user using new_password, new_name, new_email, new_picture_url
+                        args = {
+                            "name": new_name,
+                            "email": new_email,
+                            "picture_url": new_picture_url,
+                            "password": new_password
+                        }
+                        user_id = update_user(pool, args, id)
+                        if user_id is None:
+                            message = {
+                                "authenticated": session.get("authenticated"),
+                                "user_id": session.get('user_id'),
+                                "host_id": session.get("host_id"),
+                                "error": "Something went wrong! Please try again.",
+                                "user": user,
+                                "bookings": bookings,
+                            }
+                            return render_template('user_profile.html', message=message)
 
                         return redirect(f"/users/{user.get('id')}/profile")
                 else:
                     message = {
+                        "authenticated": session.get("authenticated"),
+                        "user_id": session.get('user_id'),
+                        "host_id": session.get("host_id"),
                         "error": "Enter new password to update!",
                         "user": user,
                         "bookings": bookings,
                     }
-                    return render_template('user_profile.html', message=message, user=get_user_from_session(session))
+                    return render_template('user_profile.html', message=message)
         else:
-            # update user call using user.password, new_name, new_email, new_picture_url
+            args = {
+                "name": new_name,
+                "email": new_email,
+                "picture_url": new_picture_url,
+                "password": user.get("password")
+            }
+            user_id = update_user(pool, args, id)
+            if user_id is None:
+                message = {
+                    "authenticated": session.get("authenticated"),
+                    "user_id": session.get('user_id'),
+                    "host_id": session.get("host_id"),
+                    "error": "Something went wrong! Please try again.",
+                    "user": user,
+                    "bookings": bookings,
+                }
+                return render_template('user_profile.html', message=message)
+
             return redirect(f"/users/{user.get('id')}/profile")
 
 
@@ -245,7 +295,7 @@ def host_profile(id):
             "location": request.form.get("location"),
             "neighbourhood": request.form.get("neighbourhood")
         }
-        host_id = update_host(pool, args, session.get("host_id"))
+        host_id = update_host(pool, args, id)
 
         if not host_id:
             message = {
@@ -387,10 +437,3 @@ def signup_handler():
             return redirect(f"/hosts/{host_id}/profile")
 
         return redirect("/")
-
-
-def get_user_from_session(session: SessionMixin):
-    if session.get('authenticated') is True:
-        return session.get('user_id')
-    else:
-        return None
