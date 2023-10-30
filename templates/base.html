@@ -13,7 +13,7 @@
         </nav>
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             {% if user.is_host %}
-                <a class="navbar-brand" href="/hosts"><h4 style="color: #757575">Add Listing</h4></a>
+                <a class="navbar-brand" href="/hosts/{{user.}}"><h4 style="color: #757575">Add Listing</h4></a>
             {% endif %}
             {% if user.id %}
                 <a class="navbar-brand" href="/users/{{user.id}}"><h4 style="color: #757575">User Profile</h4></a>
