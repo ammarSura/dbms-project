@@ -7,11 +7,13 @@ def create_fake_host(fake: Faker, user_id: int):
     new_host = {
         'user_id': user_id,
         'about': fake.text(),
-        'is_super_host': fake.boolean(),
+        'is_superhost': fake.boolean(),
         'response_rate': fake.random_int(min=0, max=10000) / 100,
         'acceptance_rate': fake.random_int(min=0, max=10000) / 100,
         'response_time': ['within an hour', 'within a few hours', 'within a day', 'a few days or more'][fake.random_int(min=0, max=3)],
         'identity_verified': fake.boolean(),
+        'neighbourhood': fake.word(),
+        'location': fake.word(),
     }
     return new_host
 
@@ -21,28 +23,29 @@ def create_fake_user(fake: Faker):
         'name': fake.name(),
         'picture_url': fake.url(),
         'email': fake.unique.email(),
-        'password': fake.password()
+        'password': fake.password(),
+        'is_host': fake.boolean(),
     }
 
 
-def create_fake_listing(fake, test_user_id: str, test_host_id: str):
+def create_fake_listing(fake, test_host_id: str):
     return {
         'host_id': test_host_id,
         'name': fake.name(),
         'picture_url': fake.url(),
         'price': fake.random_int(min=0, max=1000000) / 10,
-        'coors': f"({fake.latitude()}, {fake.longitude()})",
+        'coord': f"({fake.latitude()}, {fake.longitude()})",
         'property_type': fake.word(),
         'room_type': fake.word(),
         'accommodates': fake.random_int(min=1, max=15),
         'bathrooms': fake.word(),
         'bedrooms': fake.random_int(min=1, max=15),
         'beds': fake.random_int(min=1, max=15),
-        'bed_type': fake.word(),
         'amenities': [fake.word()],
-        'neighborhood': fake.word(),
-        'neighborhood_overview': fake.text(),
-        'review_rating': fake.random_int(min=0, max=5),
+        'neighbourhood': fake.word(),
+        'neighbourhood_overview': fake.text(),
+        'rating': fake.random_int(min=0, max=5),
+        'location': fake.word(),
     }
 
 

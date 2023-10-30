@@ -9,8 +9,8 @@ def post_listing_query(cur: Cursor, args_dic: dict, logger: Logger) -> int or No
     try:
         cur.execute(
             """
-            INSERT INTO listing (name, picture_url, coors, price, property_type, room_type, accommodates, bathrooms, bedrooms, beds, bed_type, amenities, host_id, neighborhood, neighborhood_overview, review_rating)
-            VALUES (%(name)s, %(picture_url)s, %(coors)s, %(price)s, %(property_type)s, %(room_type)s, %(accommodates)s, %(bathrooms)s, %(bedrooms)s, %(beds)s, %(bed_type)s, %(amenities)s, %(host_id)s, %(neighborhood)s, %(neighborhood_overview)s, %(review_rating)s)
+            INSERT INTO listings (name, picture_url, coord, price, property_type, room_type, accommodates, bathrooms, bedrooms, beds, amenities, host_id, neighbourhood, neighbourhood_overview, rating, location)
+            VALUES (%(name)s, %(picture_url)s, %(coord)s, %(price)s, %(property_type)s, %(room_type)s, %(accommodates)s, %(bathrooms)s, %(bedrooms)s, %(beds)s, %(amenities)s, %(host_id)s, %(neighbourhood)s, %(neighbourhood_overview)s, %(rating)s, %(location)s)
             RETURNING id
         """, args_dic)
         result = cur.fetchone()
@@ -25,7 +25,7 @@ def post_listing(pool: Connection, args_dic: dict, logger: Logger) -> int or Non
     params = [
         'name',
         'picture_url',
-        'coors',
+        'coord',
         'price',
         'property_type',
         'room_type',
@@ -33,12 +33,11 @@ def post_listing(pool: Connection, args_dic: dict, logger: Logger) -> int or Non
         'bathrooms',
         'bedrooms',
         'beds',
-        'bed_type',
         'amenities',
         'host_id',
-        'neighborhood',
-        'neighborhood_overview',
-        'review_rating',
+        'neighbourhood',
+        'neighbourhood_overview',
+        'rating',
     ]
     set_missing_params_to_none(args_dic, params)
     posted_host_id = run_query(

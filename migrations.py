@@ -104,44 +104,44 @@ create_table_lst = [
 
 create_index_lst = [
     """
-        CREATE INDEX IF NOT EXISTS host_user_id ON host(user_id)
+        CREATE INDEX IF NOT EXISTS host_user_id ON hosts(user_id)
     """,
     """
-        CREATE INDEX IF NOT EXISTS listing_host_id ON listing(host_id)
+        CREATE INDEX IF NOT EXISTS listing_host_id ON listings(host_id)
     """,
     """
-        CREATE INDEX IF NOT EXISTS listing_price ON listing(price)
+        CREATE INDEX IF NOT EXISTS listing_price ON listings(price)
     """,
     """
-        CREATE INDEX IF NOT EXISTS listing_neighborhood ON listing(neighborhood)
+        CREATE INDEX IF NOT EXISTS listing_neighborhood ON listings(neighbourhood)
     """,
     """
-        CREATE INDEX IF NOT EXISTS listing_bathrooms ON listing(bathrooms)
+        CREATE INDEX IF NOT EXISTS listing_bathrooms ON listings(bathrooms)
     """,
     """
-        CREATE INDEX IF NOT EXISTS review_listing_id ON review(listing_id)
+        CREATE INDEX IF NOT EXISTS review_listing_id ON reviews(listing_id)
     """,
     """
-        CREATE INDEX IF NOT EXISTS review_reviewer_id ON review(reviewer_id)
+        CREATE INDEX IF NOT EXISTS review_reviewer_id ON reviews(reviewer_id)
     """
 ]
 
 create_materialized_view_lst = [
     """
         CREATE MATERIALIZED VIEW IF NOT EXISTS best_listings AS
-        SELECT listing.id, listing."name", listing.room_type, listing.listing.property_type, listing.description, listing.accommodates, listing.picture_url, price, neighborhood, review_rating, review."comments", review.reviewer_id, min(review.created_at) as latest_review FROM listing
-        LEFT JOIN review ON listing.id = review.listing_id
-        LEFT JOIN users u on u.id = review.reviewer_id
-        GROUP BY listing.id, review.reviewer_id, review."comments"
-        ORDER BY review_rating DESC
+        SELECT listings.id, listings."name", listings.room_type, listings.property_type, listings.description, listings.accommodates, listings.picture_url, price, listings.neighbourhood, listings.rating, reviews."comments", reviews.reviewer_id, min(reviews.created_at) as latest_review FROM listings
+        LEFT JOIN reviews ON listings.id = reviews.listing_id
+        LEFT JOIN users u on u.id = reviews.reviewer_id
+        GROUP BY listings.id, reviews.reviewer_id, reviews."comments"
+        ORDER BY rating DESC
         LIMIT 200;
     """,
     """
         CREATE MATERIALIZED VIEW IF NOT EXISTS best_hosts AS
-        SELECT h.id, avg(l.review_rating), h.created_at, u."name", u.picture_url FROM "host" h
-        LEFT JOIN listing l on l.host_id = h.id
+        SELECT h.id, avg(l.rating), h.host_since, u."name", u.picture_url FROM "hosts" h
+        LEFT JOIN listings l on l.host_id = h.id
         LEFT JOIN users u on u.id = h.user_id
-        WHERE h.is_super_host = true
+        WHERE h.is_superhost = true
         GROUP BY h.id, u."name", u.picture_url
         ORDER BY avg DESC
         LIMIT 200;
