@@ -35,6 +35,8 @@ def get_listings():
         'min_price': request.args.get('min_price') or None,
         'max_price': request.args.get('max_price') or None,
         'is_super_host': True if request.args.get('is_super_host') == 'on' else None,
+        'check_in': request.args.get('check_in') or None,
+        'check_out': request.args.get('check_out') or None,
     }
     extra_query = []
     if(query_lst_args['is_super_host']):
@@ -54,6 +56,20 @@ def get_listings():
         extra_query.append(
             sql.SQL("price <= %(max_price)s")
         )
+    if(query_lst_args['check_in'] or query_lst_args['check_out']):
+        query_append_check(extra_query)
+        if(query_lst_args['check_in'] and query_lst_args['check_out']):
+            extra_query.append(
+                sql.SQL("listing.id NOT IN (SELECT DISTINCT listing_id FROM booking WHERE start_date <= %(check_in)s AND end_date >= %(check_in)s OR start_date <= %(check_out)s AND end_date >= %(check_out)s AND listing_id = listing.id)")
+            )
+        elif query_lst_args['check_in']:
+            extra_query.append(
+                sql.SQL("listing.id NOT IN (SELECT DISTINCT listing_id FROM booking WHERE start_date <= %(check_in)s AND end_date >= %(check_in)s AND listing_id = listing.id)")
+            )
+        else:
+            extra_query.append(
+                sql.SQL("listing.id NOT IN (SELECT DISTINCT listing_id FROM booking WHERE start_date <= %(check_out)s AND end_date >= %(check_out)s AND listing_id = listing.id)")
+            )
     if(amenities):
         for i in range(len(amenities)):
             amenity = amenities[i]
