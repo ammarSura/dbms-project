@@ -16,7 +16,7 @@ def get_host_query(cur: Cursor, args_dic: dict):
     return result
 
 
-def get_host(pool: Connection, args_dic: dict) -> int or None:
+def get_host(pool: Connection, args_dic: dict):
     set_missing_params_to_none(args_dic, [
         'id',
     ])

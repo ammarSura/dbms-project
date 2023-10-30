@@ -84,9 +84,9 @@
 {% block content %}
 <section class="d-flex align-items-center py-4 bg-body-tertiary">
 <main class="form-signin w-100 m-auto">
-{% if message %}
+{% if message.get("error") %}
 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-    {{ message }}
+    {{ message.error }}
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 {% endif %}

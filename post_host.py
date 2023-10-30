@@ -31,6 +31,8 @@ def post_host(pool: ConnectionPool, args_dic: dict, logger: Logger) -> int or No
         'response_time',
         'identity_verified',
         'acceptance_rate',
+        'location',
+        'neighbourhood'
     ])
     posted_host_id = run_query(
         pool, lambda cur: post_host_query(cur, args_dic, logger))

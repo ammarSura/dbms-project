@@ -22,6 +22,7 @@ app.config.from_pyfile('env.py')
 app.secret_key = b'eeabb196a8b469e1ca9f6c9f0133312cc2169632bd0491ab96d47e0ecd165f99'
 
 
+### LISTINGS ###
 @app.route('/')
 def get_listings():
     args_dic = {
@@ -106,16 +107,28 @@ def get_listings():
     )
 
 
-@app.route('/users/<id>', methods=['GET'])
-def get_user_handler(id):
-    user = get_user(pool, {'id': id})
-    if (user == None):
-        abort(404, 'User not found')
-    return render_template('index.html', message=user)
+@app.route('/listings/<id>', methods=['GET'])
+def listing_get_handler(id):
+    listing = get_listing(pool, {'id': id})
+    host = get_host(pool, {"id": listing.get("host_id")})
+    user = None
+    if session.get("user_id"):
+        user = get_user(pool, {"id": session.get("user_id")})
+    message = {
+        "listing": listing,
+        "host": host,
+        "user": user
+    }
+    return render_template('listingDetail.html', message=message)
 
 
+### USERS ###
 @app.route('/users/<id>/profile', methods=['GET', "POST"])
 def get_user_profile_handler(id):
+    if str(session.get("user_id")) != id:
+        print("here")
+        return redirect("/")
+
     user = get_user(pool, {'id': id})
     bookings = []  # get bookings
     if (user == None):
@@ -179,6 +192,7 @@ def get_user_profile_handler(id):
                         return render_template('user_profile.html', message=message)
                     else:
                         # update user using new_password, new_name, new_email, new_picture_url
+
                         return redirect(f"/users/{user.get('id')}/profile")
                 else:
                     message = {
@@ -192,42 +206,76 @@ def get_user_profile_handler(id):
             return redirect(f"/users/{user.get('id')}/profile")
 
 
+### HOSTS ###
+@app.route("/hosts/<id>/profile", methods=["GET", "POST"])
+def host_profile(id):
+    host = get_host(pool, {"id": id})
+    if host == None:
+        abort(404, 'Host not found')
+    user = get_user(pool, {"id": host.get("user_id")})
+
+    if request.method == "GET":
+        if str(session.get("host_id")) != id:
+            return render_template("host_view_profile.html", message={"host": host, "user": user})
+
+        return render_template("host_edit_profile.html", message={"host": host, "user": user})
+
+    if request.method == "POST":
+        print(request.form)
+        return render_template("host_edit_profile.html", message={"host": host, "user": user})
+
+
+### AUTHENTICATION ###
 @app.route('/signin', methods=['GET', 'POST'])
 def login_handler():
     if request.method == 'GET':
         if session.get('authenticated') is True:
             return redirect("/")
 
-        return render_template('signin.html', message={"user_id": None, "authenticated": False})
+        return render_template('signin.html', message={})
+
     if request.method == "POST":
         email = request.form.get("email").strip()
         password = md5(request.form.get(
             "password").strip().encode("utf-8")).hexdigest()
+
         # get user
         args = {"email": email, "password": password}
-        fields = [sql.Identifier("users", "id")]
+        fields = [sql.Identifier("users", "id"),
+                  sql.Identifier("users", "is_host")]
         user = run_query(pool, lambda cur: select_query(
             cur, fields, 'users', args))
-        if user:
-            print(user)
+
+        if user.get("id"):
             session['authenticated'] = True
-            session['user_id'] = user
+            session['user_id'] = user.get("id")
+            if user.get("is_host"):
+                session["host_id"] = run_query(
+                    pool, lambda cur: select_query(
+                        cur, [sql.Identifier("hosts", "id")], 'hosts', {"user_id": user.get("id")})).get("id")
+            else:
+                session["host_id"] = None
+
             return redirect("/")
 
-        return render_template("signin.html", message="Incorrect details")
+        return render_template("signin.html", message={"error": "Incorrect details"})
 
 
 @app.route("/signout", methods=["POST"])
 def signout():
     session.pop("authenticated")
     session.pop("user_id")
+    session.pop("host_id")
     return redirect("/")
 
 
 @app.route('/signup', methods=['POST', "GET"])
 def signup_handler():
     if request.method == 'GET':
-        return render_template('signup.html')
+        if session.get('authenticated') is True:
+            return redirect("/")
+        return render_template('signup.html', message={})
+
     if request.method == "POST":
         # check passwords
         password = md5(request.form.get(
@@ -235,7 +283,7 @@ def signup_handler():
         confirm_password = md5(request.form.get(
             "confirm_password").strip().encode("utf-8")).hexdigest()
         if password != confirm_password:
-            return render_template("signup.html", message="Passwords don't match. Try again.")
+            return render_template("signup.html", message={"error": "Passwords don't match. Try again."})
 
         # get remaining values
         email = request.form.get("email").strip()
@@ -245,47 +293,33 @@ def signup_handler():
             is_host = False
         else:
             is_host = True
+        user_args = {"name": name, "email": email,
+                     "password": password, "is_host": is_host}
+        user_id = post_user(pool, user_args, app.logger)
 
-        # run user query func, get result and check
-        if True:
-            # return redirect("/")
-            pass
-        return render_template("signup.html", message="Something went wrong, please try again!")
+        if not user_id:
+            return render_template("signup.html", message={"error": "Email already exists, try another one."})
 
+        host_id = None
+        if is_host:
+            host_args = {"user_id": user_id}
+            host_id = post_host(pool, host_args, app.logger)
 
-@app.route('/host/<id>', methods=['GET'])
-def host_get_handler(id):
-    host = get_host(pool, {
-        'id': id
-    })
-    return render_template('index.html', message='Query params: ' + str(host['id']))
+        session['authenticated'] = True
+        session['user_id'] = user_id
+        session['host_id'] = host_id
 
+        if is_host:
+            return redirect(f"/hosts/{host_id}/profile")
 
-@app.route('/host', methods=['POST'])
-def host_post_handler():
-    args_dic = request.json
-    result = post_host(pool, args_dic, app.logger)
-    if (result == None):
-        abort(400, 'Missing param')
-    else:
-        return render_template('index.html', message=result)
+        return redirect("/")
 
 
-@app.route('/listing', methods=['GET'])
-def listings_get_handler():
-    args_dic = {
-        'count': request.args.get('count') or 10
-    }
-    listings = get_listing(pool, args_dic)
-    return render_template('index.html', message='Query params: ' + str(len(listings)))
-
-
-@app.route('/listings/<id>', methods=['GET'])
-def listing_get_handler(id):
-    listing = get_listing(pool, {'id': id})
-    host = get_host(pool, {"id": listing.get("host_id")})
-    message = {
-        "listing": listing,
-        "host": host
-    }
-    return render_template('listingDetail.html', message=message)
+# @app.route('/host', methods=['POST'])
+# def host_post_handler():
+#     args_dic = request.json
+#     result = post_host(pool, args_dic, app.logger)
+#     if (result == None):
+#         abort(400, 'Missing param')
+#     else:
+#         return render_template('index.html', message=result)
