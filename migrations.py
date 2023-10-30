@@ -148,6 +148,7 @@ create_materialized_view_lst = [
     """,
 
 ]
+
 for query in create_table_lst:
     try:
         run_query(pool, lambda cur: cur.execute(query))
