@@ -1,11 +1,12 @@
 
 import os
+import sys
 from hashlib import md5
 
 from flask import Flask, abort, redirect, render_template, request, url_for
 from werkzeug.utils import secure_filename
 
-from db_utils import create_pool
+from db_utils import create_pool, query_append_check
 from get_host import get_host
 from get_listing import get_listing
 from get_user import get_user
@@ -20,7 +21,8 @@ app.config.from_pyfile('env.py')
 
 @app.route('/')
 def get_root():
-    return render_template('index.html', message="Airbnb")
+    message = "Airbnb"
+    return render_template('index.html', message=message)
 
 
 @app.route('/users/<id>', methods=['GET'])
@@ -110,7 +112,7 @@ def get_user_profile_handler(id):
             return redirect(f"/users/{user.get('id')}/profile")
 
 
-@app.route('/signin', methods=['POST', "GET"])
+@app.route('/signin', methods=['POST'])
 def login_handler():
     if request.method == 'GET':
         return render_template('signin.html')
@@ -137,7 +139,7 @@ def signup_handler():
         confirm_password = md5(request.form.get(
             "confirm_password").strip().encode("utf-8")).hexdigest()
         if password != confirm_password:
-            return render_template("signup.html", message="Passwords don't match. Try")
+            return render_template("signup.html", message="Passwords don't match. Try again.")
 
         # get remaining values
         email = request.form.get("email").strip()

@@ -1,7 +1,120 @@
 {% extends "base.html" %}
 {% block head %}
-<title>Groundbnb</title>
+<title>FairBnb</title>
 {% endblock %}
 {% block content %}
+<div class="album py-2 bg-light">
+    <form action="/">
+      <div class="justify-content-between my-2">
+        <select name="city"class="form-select form-select-lg" aria-label="Default select example">
+          <option value="" selected disabled>Choose here</option>
+          {% for city in cities %}
+            <option "value="{{city}}">{{city}}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div id="radiogroup">
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="room_type" id="inlineRadio1" value="Private room">
+          <label class="form-check-label" for="inlineRadio1">Room</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="room_type" id="inlineRadio2" value="Entire home/apt">
+          <label class="form-check-label" for="inlineRadio2">Entire Place</label>
+        </div>
+      </div>
+      <div id="price picker">
+        <div class="form-group">
+          <label for="formControlRange">Min Price</label>
+          <input type="number" class="form-control-number" id="formControlRange" name="min_price" min="0" max="1000">
+          <label for="formControlRange">Max Price</label>
+          <input type="number" class="form-control-number" id="formControlRange" name="max_price" min="0" max="1000">
+        </div>
+      </div>
+      <div id="review">
+        <div class="form-group">
+          <label for="formControlRange">Rating</label>
+          <input type="number" class="form-control-number" id="formControlRange" name="review_rating" min="0" max="5">
+        </div>
+      </div>
+      <div id="beds">
+        <div class="form-group">
+          <label for="formControlRange">Bedrooms</label>
+          <input type="number" class="form-control-number" id="formControlRange" name="bedrooms" min="1">
+          <label for="formControlRange">Beds</label>
+          <input type="number" class="form-control-number" id="formControlRange" name="beds" min="1">
+        </div>
+      </div>
+      <div id="amenities">
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" id="inlineCheckbox1" value="pillows" name="amenities">
+            <label class="form-check-label" for="inlineCheckbox1">Extra Pillows and Blankets</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" id="inlineCheckbox2" value="alarm" name="amenities">
+            <label class="form-check-label" for="inlineCheckbox2">Carbon Monoxide Alarm</label>
+          </div>
+      </div>
+      <div id="host">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault" name="is_super_host">
+          <label class="form-check-label" for="flexSwitchCheckDefault">Is Super Host</label>
+        </div>
+      </div>
+      <button type="submit"class="btn btn-primary">submit</button>
 
+    </form>
+      {% if selected_city %}
+        <h5 class="text-muted pb-4 pt-2">Showing results in {{selected_city}}</h5>
+      {% endif %}
+    <div class="row">
+      {% for listing in listings%}
+        <div class="col-md-4">
+          <div class="card mb-4 shadow-sm" style="height: 17.5rem;">
+            <img
+              src="{{listing.picture_url}}"
+              class="card-img-top"
+              alt="listing image"
+            />
+            <div class="card-body">
+              <a href="/listing/{{listing.id}}" style="text-decoration: inherit; color: inherit; cursor: pointer;">
+                <p class="card-text">
+                  {{listing.name}}
+                </p>
+                <p class="card-text">
+                  {{listing.room_type}}
+              </a>
+              <small class="text-muted">
+                ${{listing.price}}
+              </small>
+              <div
+                class="d-flex justify-content-between align-items-center"
+              >
+                <small class="text-muted">
+                  {% if listing.review_rating%}
+                   {{listing.review_rating}}
+                  {% endif %}
+                  {{listing.stars}}
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <div id="pagination" style="display: flex; justify-content: center; align-items: center;">
+      <ul class="pagination">
+        <li class="page-item"><a class="page-link" href="?page=1">1</a></li>
+        <li class="page-item"><a class="page-link" href="?page=2">2</a></li>
+        <li class="page-item"><a class="page-link" href="?page=3">3</a></li>
+        <li class="page-item"><a class="page-link" href="?page=4">4</a></li>
+        <li class="page-item"><a class="page-link" href="?page=5">5</a></li>
+        <li class="page-item"><a class="page-link" href="?page=6">6</a></li>
+        <li class="page-item"><a class="page-link" href="?page=7">7</a></li>
+        <li class="page-item"><a class="page-link" href="?page=8">8</a></li>
+        <li class="page-item"><a class="page-link" href="?page=9">9</a></li>
+        <li class="page-item"><a class="page-link" href="?page=10">10</a></li>
+      </ul>
+    </div>
+</div>
 {% endblock %}

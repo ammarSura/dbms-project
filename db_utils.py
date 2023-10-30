@@ -1,4 +1,5 @@
-from psycopg import Cursor, sql, ClientCursor
+import sys
+from psycopg import ClientCursor, Cursor, sql
 from psycopg_pool import ConnectionPool
 from typing import Callable
 from env import DB_URL
@@ -23,33 +24,71 @@ def create_pool():
     print('Pool created')
     return pool
 
-def select_query(cur: Cursor, table_name: str, args_dic: dict, count: int = None) -> dict or None:
+def select_query(cur: Cursor, fields: list[sql.Identifier], table_name: str, args_dic: dict, extra_query: dict = None, count: int = None, page: int = None) -> dict or None:
     query_lst = [
-        sql.SQL("SELECT * FROM {table_name}").format(
-            table_name=sql.Identifier(table_name)
-        )
+        sql.SQL("SELECT {fields} FROM {table_name}")
+            .format(
+                fields=sql.SQL(', ').join(fields),
+                table_name=sql.Identifier(table_name)
+            )
     ]
+
+    if(extra_query and 'query_lst' in extra_query and len(extra_query['query_lst']) > 0):
+        query_lst.extend(extra_query['query_lst'])
     for param, value in args_dic.items():
         if(value):
-            query_lst.append(
-                sql.SQL(
-                    "\nWHERE {pkey} = %({pkey})s".format(
-                        pkey=param,
-                    ))
-            )
+            if(len(query_lst) == 1):
+                query_lst.append(
+                    sql.SQL(
+                        "\nWHERE {pkey} = %({pkey})s".format(
+                            pkey=param,
+                        ))
+                )
+            else:
+                query_lst.append(
+                    sql.SQL(
+                        "\nAND {pkey} = %({pkey})s".format(
+                            pkey=param,
+                        ))
+                )
     if(count):
         query_lst.append(
             sql.SQL("\nLIMIT %(count)s")
         )
-    query = sql.Composed(query_lst)
     args_dic['count'] = count or 10
+
+    if(page):
+        query_lst.append(
+            sql.SQL("\nOFFSET %(offset)s")
+        )
+        args_dic['offset'] = page * args_dic['count']
+
+    extra_query and 'args_dic' in extra_query and args_dic.update(extra_query['args_dic'])
+    query = sql.Composed(query_lst)
+    cursor = ClientCursor(create_pool().getconn())
+    print('mogrify', cursor.mogrify(query, args_dic), file=sys.stdout)
+
     cur.execute(
         query,
         args_dic
     )
+
     result = None
     if(count):
         result = cur.fetchall()
     else:
         result = cur.fetchone()
     return result
+
+def query_append_check(query_lst: list):
+    if(len(query_lst) > 1):
+        query_lst.append(
+                sql.SQL(
+                    "\nAND "
+                )
+            )
+    else:
+            query_lst.append(
+            sql.SQL(
+                "\nWHERE ")
+        )
