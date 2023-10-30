@@ -5,7 +5,6 @@ from db_utils import run_query, select_query, set_missing_params_to_none
 
 def get_listing(pool: Connection, args_dic: dict) -> int or None:
     count = None
-    if ('count' in args_dic):
     extra_query = None
     page = None
     if('count' in args_dic):
