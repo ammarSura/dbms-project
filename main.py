@@ -182,9 +182,12 @@ def listings_get_handler():
     return render_template('index.html', message='Query params: ' + str(len(listings)))
 
 
-@app.route('/listing/<id>', methods=['GET'])
+@app.route('/listings/<id>', methods=['GET'])
 def listing_get_handler(id):
-    listing = get_listing(pool, {
-        'id': id
-    })
-    return render_template('index.html', message='Query params: ' + str(listing['id']))
+    listing = get_listing(pool, {'id': id})
+    host = get_host(pool, {"id": listing.get("host_id")})
+    message = {
+        "listing": listing,
+        "host": host
+    }
+    return render_template('listingDetail.html', message=message)

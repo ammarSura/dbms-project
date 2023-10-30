@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>User Profile</title>
+<title>{{ message.user.name }}</title>
 <link href={{ url_for('static', filename='css/user_profile.css' )}} rel="stylesheet">
 {% endblock %}
 
@@ -96,11 +96,5 @@
 </div>
 </div>
 </div>
-<script>
-const fileInp = document.getElementById("new_profile_picture");
-const btn = document.getElementById("clear");
-btn.addEventListener("click", ()=>{
-    fileInp.value = null;
-})
-</script>
+<script src={{ url_for('static', filename='js/clear_file.js' )}} />
 {% endblock %}
