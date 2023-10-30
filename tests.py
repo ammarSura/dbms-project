@@ -3,8 +3,11 @@ import unittest
 from decimal import Decimal
 from typing import Callable
 
+from get_best_hosts import get_best_hosts
+from get_best_listings import get_best_listing
+
 from faker import Faker
-from psycopg import Connection
+from psycopg import Connection, sql
 
 from db_utils import create_pool
 from get_host import get_host
@@ -216,6 +219,33 @@ class TestListingMethods(MethodTester):
         self.assertIsNotNone(found_item)
         self.assertEqual(found_item['id'], listings[0]['id'])
 
+class TestAnalyticsMethods(MethodTester):
+    def test_best_listings_query(self):
+        query_lst = [
+            sql.SQL('WHERE best_listings.price < %(price)s')
+        ]
+        query_lst_args = {
+            'price': 10000
+        }
+        extra_query = {
+            'query_lst': query_lst,
+            'args_dic': query_lst_args
+        }
+        listings = get_best_listing(self.pool, {
+            'count': 10,
+            'extra_query': extra_query
+        })
+        self.assertIsNotNone(listings)
+        self.assertTrue(isinstance(listings, list))
+        self.assertEqual(len(listings), 10)
+
+    def test_best_hosts_query(self):
+        hosts = get_best_hosts(self.pool, {
+            'count': 10
+        })
+        self.assertIsNotNone(hosts)
+        self.assertTrue(isinstance(hosts, list))
+        self.assertEqual(len(hosts), 10)
 
 if __name__ == '__main__':
     unittest.main()
