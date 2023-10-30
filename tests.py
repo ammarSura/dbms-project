@@ -3,6 +3,8 @@ import unittest
 from decimal import Decimal
 from typing import Callable
 
+from update_user import update_user
+
 from get_booking import get_bookings
 
 from post_booking import post_booking
@@ -121,6 +123,20 @@ class TestUserMethods(MethodTester):
         return self._test_post_item_missing_required_param('name', create_fake_user, post_user)
     def test_post_user_missing_param(self):
         return self._test_post_item_missing_param('picture_url', create_fake_user, post_user)
+
+    def test_update_user(self):
+        update={
+            'email': self.fake.unique.email(),
+            'picture_url': self.fake.url()
+        }
+        updated_id = update_user(self.pool, update, self.test_user['id'])
+        self.assertEqual(updated_id, self.test_user['id'])
+        fetched_user = get_user(self.pool, {
+            'id': self.test_user['id']
+        })
+
+        self.assertEqual(update['email'], fetched_user['email'])
+        self.assertEqual(update['picture_url'], fetched_user['picture_url'])
 
 class TestHostMethods(MethodTester):
     def host_equality_check(self, test_host: dict, fetched_host: dict or None):
