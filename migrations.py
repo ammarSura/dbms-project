@@ -108,6 +108,9 @@ create_table_lst = [
     """,
     """
         ALTER TABLE reviews ADD COLUMN IF NOT EXISTS rating NUMERIC(3, 2) DEFAULT 0.00;
+    """,
+    """
+        ALTER TABLE bookings ADD COLUMN IF NOT EXISTS num_guests SMALLINT DEFAULT 1;
     """
 ]
 
