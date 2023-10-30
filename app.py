@@ -2,23 +2,21 @@
 import os
 from hashlib import md5
 
+from flask import (Flask, abort, redirect, render_template, request, session,
+                   url_for)
 from flask.sessions import SessionMixin
-
-from post_user import post_user
-
-from get_best_hosts import get_best_hosts
-from get_best_listings import get_best_listing
-
-from flask import Flask, abort, redirect, render_template, request, session, url_for
 from psycopg import sql
 from werkzeug.utils import secure_filename
 
 from db_utils import create_pool, query_append_check, run_query, select_query
+from get_best_hosts import get_best_hosts
+from get_best_listings import get_best_listing
 from get_host import get_host
 from get_listing import get_listing
 from get_neighbourhoods import get_neighbourhoods
 from get_user import get_user
 from post_host import post_host
+from post_user import post_user
 
 pool = create_pool()
 
@@ -103,14 +101,15 @@ def get_listings():
         listing['stars'] = "⭐"*int(listing['rating']
                                    ) if listing['rating'] else "No reviews"
         listings_with_starts.append(listing)
-    return render_template(
-        'index.html',
-        listings=listings_with_starts,
-        user_id=request.args.get('user_id'),
-        cities=neighbourhood_lst,
-        selected_city=args_dic['neighbourhood'],
-        user=get_user_from_session(session)
-    )
+    message = {
+        "authenticated": session.get("authenticated"),
+        "user_id": session.get('user_id'),
+        "host_id": session.get("host_id"),
+        "listings": listings_with_starts,
+        "cities": neighbourhood_lst,
+        "selected_city": args_dic['neighbourhood']
+    }
+    return render_template('index.html', message=message)
 
 
 @app.route('/listings/<id>', methods=['GET'])
