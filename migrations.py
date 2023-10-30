@@ -129,7 +129,7 @@ create_index_lst = [
 create_materialized_view_lst = [
     """
         CREATE MATERIALIZED VIEW IF NOT EXISTS best_listings AS
-        SELECT listing.id, listing."name", listing.picture_url, price, neighborhood, review_rating, review."comments", review.reviewer_id, min(review.created_at) as latest_review FROM listing
+        SELECT listing.id, listing."name", listing.room_type, listing.listing.property_type, listing.description, listing.accommodates, listing.picture_url, price, neighborhood, review_rating, review."comments", review.reviewer_id, min(review.created_at) as latest_review FROM listing
         LEFT JOIN review ON listing.id = review.listing_id
         LEFT JOIN users u on u.id = review.reviewer_id
         GROUP BY listing.id, review.reviewer_id, review."comments"
