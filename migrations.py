@@ -132,21 +132,32 @@ create_materialized_view_lst = [
         SELECT listings.id, listings."name", listings.room_type, listings.property_type, listings.description, listings.accommodates, listings.picture_url, price, listings.neighbourhood, listings.rating, reviews."comments", reviews.reviewer_id, min(reviews.created_at) as latest_review FROM listings
         LEFT JOIN reviews ON listings.id = reviews.listing_id
         LEFT JOIN users u on u.id = reviews.reviewer_id
+        WHERE listings.rating IS NOT NULL
         GROUP BY listings.id, reviews.reviewer_id, reviews."comments"
         ORDER BY rating DESC
         LIMIT 200;
     """,
     """
         CREATE MATERIALIZED VIEW IF NOT EXISTS best_hosts AS
-        SELECT h.id, avg(l.rating), h.host_since, u."name", u.picture_url FROM "hosts" h
-        LEFT JOIN listings l on l.host_id = h.id
-        LEFT JOIN users u on u.id = h.user_id
-        WHERE h.is_superhost = true
-        GROUP BY h.id, u."name", u.picture_url
-        ORDER BY avg DESC
-        LIMIT 200;
-    """,
-
+            SELECT top_hosts.*, top_listings.top_listings_id, top_listings.max_rating FROM (
+                SELECT h.id, h.neighbourhood, AVG(l.rating) avg_rating, h.host_since, u."name", u.picture_url FROM "hosts" h
+                LEFT JOIN listings l on l.host_id = h.id
+                LEFT JOIN users u on u.id = h.user_id
+                WHERE h.is_superhost = true
+                AND l.rating IS NOT NULL
+                GROUP BY h.id, u."name", u.picture_url
+                ORDER BY avg_rating desc
+            ) AS top_hosts
+            LEFT JOIN (
+                SELECT h.id AS host_id, l.id AS top_listings_id, l.rating AS max_rating
+                FROM hosts h
+                LEFT JOIN listings l ON h.id = l.host_id
+                WHERE l.rating = (
+                    SELECT MAX(rating) FROM listings WHERE host_id = h.id
+                )
+            ) AS top_listings ON top_listings.host_id = top_hosts.id
+            ORDER BY top_hosts.avg_rating DESC;
+    """
 ]
 
 for query in create_table_lst:
