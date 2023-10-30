@@ -120,6 +120,9 @@ def listing_get_handler(id):
     if session.get("user_id"):
         user = get_user(pool, {"id": session.get("user_id")})
     message = {
+        "authenticated": session.get("authenticated"),
+        "user_id": session.get('user_id'),
+        "host_id": session.get("host_id"),
         "listing": listing,
         "host": host,
         "user": user
@@ -237,7 +240,12 @@ def login_handler():
         if session.get('authenticated') is True:
             return redirect("/")
 
-        return render_template('signin.html', message={})
+        message = {
+            "authenticated": session.get("authenticated"),
+            "user_id": session.get('user_id'),
+            "host_id": session.get("host_id")
+        }
+        return render_template('signin.html', message=message)
 
     if request.method == "POST":
         email = request.form.get("email").strip()
@@ -246,8 +254,10 @@ def login_handler():
 
         # get user
         args = {"email": email, "password": password}
-        fields = [sql.Identifier("users", "id"),
-                  sql.Identifier("users", "is_host")]
+        fields = [
+            sql.Identifier("users", "id"),
+            sql.Identifier("users", "is_host")
+        ]
         user = run_query(pool, lambda cur: select_query(
             cur, fields, 'users', args))
 
@@ -256,14 +266,27 @@ def login_handler():
             session['user_id'] = user.get("id")
             if user.get("is_host"):
                 session["host_id"] = run_query(
-                    pool, lambda cur: select_query(
-                        cur, [sql.Identifier("hosts", "id")], 'hosts', {"user_id": user.get("id")})).get("id")
+                    pool,
+                    lambda cur: select_query(
+                        cur,
+                        [sql.Identifier("hosts", "id")],
+                        'hosts',
+                        {"user_id": user.get("id")}
+                    )
+                ).get("id")
+
             else:
                 session["host_id"] = None
 
             return redirect("/")
 
-        return render_template("signin.html", message={"error": "Incorrect details"})
+        message = {
+            "authenticated": session.get("authenticated"),
+            "user_id": session.get('user_id'),
+            "host_id": session.get("host_id"),
+            "error": "Incorrect details!"
+        }
+        return render_template("signin.html", message=message)
 
 
 @app.route("/signout", methods=["POST"])
@@ -276,11 +299,16 @@ def signout():
 
 @app.route('/signup', methods=['POST', "GET"])
 def signup_handler():
-    user = get_user_from_session(session)
     if request.method == 'GET':
         if session.get('authenticated') is True:
             return redirect("/")
-        return render_template('signup.html', message={})
+
+        message = {
+            "authenticated": session.get("authenticated"),
+            "user_id": session.get('user_id'),
+            "host_id": session.get("host_id")
+        }
+        return render_template('signup.html', message=message)
 
     if request.method == "POST":
         # check passwords
@@ -294,17 +322,29 @@ def signup_handler():
         # get remaining values
         email = request.form.get("email").strip()
         name = request.form.get("name").strip()
+
         is_host = request.form.get("is_host")
         if is_host is None:
             is_host = False
         else:
             is_host = True
-        user_args = {"name": name, "email": email,
-                     "password": password, "is_host": is_host}
+
+        user_args = {
+            "name": name,
+            "email": email,
+            "password": password,
+            "is_host": is_host
+        }
         user_id = post_user(pool, user_args, app.logger)
 
         if not user_id:
-            return render_template("signup.html", message={"error": "Email already exists, try another one."})
+            message = {
+                "authenticated": session.get("authenticated"),
+                "user_id": session.get('user_id'),
+                "host_id": session.get("host_id"),
+                "error": "Email already exists, try another one."
+            }
+            return render_template("signup.html", message=message)
 
         host_id = None
         if is_host:
@@ -326,12 +366,3 @@ def get_user_from_session(session: SessionMixin):
         return session.get('user_id')
     else:
         return None
-
-# @app.route('/host', methods=['POST'])
-# def host_post_handler():
-#     args_dic = request.json
-#     result = post_host(pool, args_dic, app.logger)
-#     if (result == None):
-#         abort(400, 'Missing param')
-#     else:
-#         return render_template('index.html', message=result)
