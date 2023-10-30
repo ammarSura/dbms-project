@@ -1,5 +1,6 @@
 from psycopg import Connection
 from psycopg_pool import ConnectionPool
+
 from db_utils import run_query
 
 

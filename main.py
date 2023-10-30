@@ -2,7 +2,7 @@
 import os
 from hashlib import md5
 
-from flask import Flask, abort, render_template, request, url_for
+from flask import Flask, abort, redirect, render_template, request, url_for
 from psycopg import sql
 from werkzeug.utils import secure_filename
 
