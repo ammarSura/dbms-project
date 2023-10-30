@@ -99,6 +99,15 @@ create_table_lst = [
             FOREIGN KEY(listing_id)
                 REFERENCES listings
         );
+    """,
+    """
+        ALTER TABLE bookings ADD CONSTRAINT check_dates CHECK (start_date < end_date AND end_date > CURRENT_DATE);
+    """,
+    """
+        ALTER TABLE bookings ADD CONSTRAINT check_cost CHECK (cost > 0);
+    """,
+    """
+        ALTER TABLE reviews ADD COLUMN IF NOT EXISTS rating NUMERIC(3, 2) DEFAULT 0.00;
     """
 ]
 
