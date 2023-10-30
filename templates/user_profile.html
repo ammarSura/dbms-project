@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>User Profile</title>
+<link href={{ url_for('static', filename='css/user_profile.css' )}} rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container rounded bg-tertiary mt-5 mb-5">
+    <div class="row">
+        <div class="col-md-3 border-right">
+            <div class="d-flex flex-column align-items-center text-center p-3 py-5">
+            {%if not message.user.picture_url%}
+                {% set picture_url =
+                "https://st3.depositphotos.com/15648834/17930/v/600/depositphotos_179308454-stock-illustration-unknown-person-silhouette-glasses-profile.jpg" %}
+            {% else %}
+            {% set picture_url = message.user.picture_url%}
+            {% endif %}
+            <img class="rounded-circle mt-5"
+                    width="150px"
+                    src={{ picture_url }}>
+                    <span class="font-weight-bold">{{ message.user.name }}</span>
+                    <span class="text-black-50">{{ message.user.email }}</span>
+                    <span></span>
+            </div>
+        </div>
+        {% set update_link = "/users/" + message.user.id|string + "/profile"%}
+
+        <div class="col-md-5 border-right">
+        <form action={{ update_link }} method="POST" enctype="multipart/form-data">
+            <div class="p-3 py-5">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="text-right">Profile Settings</h4>
+                </div>
+                {% if message.error %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ message.error }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endif %}
+                <div class="row mt-2">
+                    <div class="col-md-12">
+                        <label class="labels">Name</label>
+                        <input type="text" name="new_name" id="new_name" class="form-control" placeholder={{ message.user.name }} value={{ message.user.name }}>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-12"><label class="labels">Email</label>
+                        <input name="new_email" id="new_email" type="email" class="form-control" placeholder={{ message.user.email }} value={{ message.user.email }}>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-10">
+                        <label class="labels">Profile Picture</label>
+                        <input name="new_profile_picture" id="new_profile_picture" type="file" class="form-control" accept=".png,.jpeg,.jpg">
+                    </div>
+                    <div class="col-md-2 mt-4">
+                        <button class="btn btn-primary profile-button" type="button" id="clear">Clear</button>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-12"><label class="labels">Old Password</label>
+                        <input name="old_password" id="old_password" type="password" class="form-control" placeholder="old password" value="">
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-12"><label class="labels">New Password</label>
+                        <input name="new_password" id="new_password" type="password" class="form-control" placeholder="new password" value="">
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-12"><label class="labels">Confirm New Password</label>
+                        <input name="confirm_password" id="confirm_password" type="password" class="form-control" placeholder="confirm password" value="">
+                    </div>
+                </div>
+                <div class="mt-5 text-center">
+                    <button class="btn btn-primary profile-button" type="submit">Save Profile</button>
+                </div>
+            </div>
+        </form>
+
+        </div>
+        <div class="col-md-4">
+            <div class="p-3 py-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="text-right">Bookings</h4>
+            </div>
+            <div class="col-md-12">
+            {% for booking in message.bookings%}
+            <h6 class="text-right">Bookings</h6>
+            <br>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+<script>
+const fileInp = document.getElementById("new_profile_picture");
+const btn = document.getElementById("clear");
+btn.addEventListener("click", ()=>{
+    fileInp.value = null;
+})
+</script>
+{% endblock %}
