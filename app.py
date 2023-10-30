@@ -219,7 +219,9 @@ def login_handler():
 
 @app.route("/signout", methods=["POST"])
 def signout():
-    pass
+    session.pop("authenticated")
+    session.pop("user_id")
+    return redirect("/")
 
 
 @app.route('/signup', methods=['POST', "GET"])
