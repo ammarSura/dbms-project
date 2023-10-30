@@ -17,6 +17,7 @@ from get_neighbourhoods import get_neighbourhoods
 from get_user import get_user
 from post_host import post_host
 from post_user import post_user
+from update_host import update_host
 
 pool = create_pool()
 
@@ -220,17 +221,44 @@ def host_profile(id):
     host = get_host(pool, {"id": id})
     if host == None:
         abort(404, 'Host not found')
-    user = get_user(pool, {"id": host.get("user_id")})
+
+    host_user = get_user(pool, {"id": host.get("user_id")})
 
     if request.method == "GET":
+        message = {
+            "authenticated": session.get("authenticated"),
+            "user_id": session.get('user_id'),
+            "host_id": session.get("host_id"),
+            "host": host,
+            "host_user": host_user
+        }
         if str(session.get("host_id")) != id:
-            return render_template("host_view_profile.html", message={"host": host, "user": user})
+            template = "host_view_profile.html"
+        else:
+            template = "host_edit_profile.html"
 
-        return render_template("host_edit_profile.html", message={"host": host, "user": user})
+        return render_template(template, message=message)
 
     if request.method == "POST":
-        print(request.form)
-        return render_template("host_edit_profile.html", message={"host": host, "user": user})
+        args = {
+            "about": request.form.get("about"),
+            "location": request.form.get("location"),
+            "neighbourhood": request.form.get("neighbourhood")
+        }
+        host_id = update_host(pool, args, session.get("host_id"))
+
+        if not host_id:
+            message = {
+                "authenticated": session.get("authenticated"),
+                "user_id": session.get('user_id'),
+                "host_id": session.get("host_id"),
+                "host": host,
+                "host_user": host_user,
+                "error": "Something went wrong. Please try again."
+            }
+            return render_template("host_edit_profile.html", message=message)
+
+        return redirect(f"/hosts/{host_id}/profile")
 
 
 ### AUTHENTICATION ###

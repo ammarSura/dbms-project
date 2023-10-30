@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Host | {{ message.user.name }}</title>
+<title>Host | {{ message.get("host_user").get("name") }}</title>
 <link href={{ url_for('static', filename='css/user_profile.css' )}} rel="stylesheet">
 {% endblock %}
 
@@ -10,17 +10,17 @@
     <div class="row">
         <div class="col-md-3 border-right">
             <div class="d-flex flex-column align-items-center text-center p-3 py-5">
-            {%if not message.user.picture_url%}
+            {%if not message.host_user.get("picture_url")%}
                 {% set picture_url =
                 "https://st3.depositphotos.com/15648834/17930/v/600/depositphotos_179308454-stock-illustration-unknown-person-silhouette-glasses-profile.jpg" %}
             {% else %}
-            {% set picture_url = message.user.picture_url%}
+            {% set picture_url = message.host_user.picture_url%}
             {% endif %}
             <img class="rounded-circle mt-5"
                     width="150px"
                     src={{ picture_url }}>
-                    <span class="font-weight-bold">{{ message.user.name }}</span>
-                    <span class="text-black-50">{{ message.user.email }}</span>
+                    <span class="font-weight-bold">{{ message.host_user.name }}</span>
+                    <span class="text-black-50">{{ message.host_user.get("email") }}</span>
                     <span></span>
             </div>
         </div>
@@ -33,35 +33,35 @@
                 <div class="row mt-2">
                     <div class="col-md-4">
                         <label class="labels">Name</label>
-                        <input disabled type="text" name="new_name" id="new_name" class="form-control" placeholder='{{ message.user.name }}' value='{{ message.user.name }}'>
+                        <input disabled type="text" name="new_name" id="new_name" class="form-control" placeholder='{{ message.host_user.name }}' value='{{ message.host_user.name }}'>
                     </div>
                     <div class="col-md-6">
                         <label class="labels">Location</label>
                         <input disabled type="text" name="location" id="location" class="form-control"
-                            placeholder='{{ message.host.neighbourhood + ", " + message.host.location }}' value='{{ message.host.neighbourhood + ", " + message.host.location }}'>
+                            placeholder='{{ message.get("host").get("neighbourhood") + ", " + message.host.get("location") }}' value='{{ message.host.neighbourhood + ", " + message.host.location }}'>
                     </div>
                     <div class="col-md-2">
                         <label class="labels">Host Since</label>
                         <input disabled type="text" name="host_since" id="host_since" class="form-control"
-                            placeholder='{{ message.host.host_since }}' value='{{ message.host.host_since.strftime("%b %d, %Y") }}'>
+                            placeholder='{{ message.host.get("host_since") }}' value='{{ message.host.host_since.strftime("%b %d, %Y") }}'>
                     </div>
                 </div>
                 <div class="row mt-2">
                     <div class="col-md-12">
                         <label class="labels">About</label>
-                        <p>{{ message.host.about }}</p>
+                        <p>{{ message.host.get("about") }}</p>
                     </div>
                 </div>
                 <div class="row mt-4">
                     <div class="col-md-6">
-                        {% if message.host.is_superhost %}
+                        {% if message.host.get("is_superhost") %}
                         <h4><span class="badge rounded-pill text-bg-success">Supherhost!</span></h4>
                         {% else %}
                         <h4><span class="badge rounded-pill text-bg-secondary">Not A Superhost :(</span></h4>
                         {% endif %}
                     </div>
                     <div class="col-md-6">
-                        {% if message.host.identity_verified %}
+                        {% if message.host.get("identity_verified") %}
                         <h4><span class="badge rounded-pill text-bg-primary">Verified!</span></h4>
                         {% else %}
                         <h4><span class="badge rounded-pill text-bg-secondary">Not Verified :(</span></h4>
@@ -71,7 +71,7 @@
                 <div class="row mt-2">
                     <div class="col-md-4">
                         <label class="labels">Response Rate</label>
-                        {% if message.host.response_rate %}
+                        {% if message.host.get("response_rate") %}
                         <input disabled type="text" name="response_rate" id="response_rate" class="form-control" placeholder='{{ message.host.response_rate }}' value='{{ message.host.response_rate|int}}%'>
                         {% else %}
                         <input disabled type="text" name="response_rate" id="response_rate" class="form-control" placeholder="N/A" value="N/A">
@@ -79,7 +79,7 @@
                     </div>
                     <div class="col-md-4">
                         <label class="labels">Response Time</label>
-                        {% if message.host.response_time %}
+                        {% if message.host.get("response_time") %}
                         <input disabled type="text" name="response_time" id="response_time" class="form-control" placeholder='{{ message.host.response_time }}' value='{{ message.host.response_time }}'>
                         {% else %}
                         <input disabled type="text" name="response_time" id="response_time" class="form-control" placeholder="N/A" value="N/A">
@@ -88,7 +88,7 @@
                     <div class="col-md-4">
                         <label class="labels">Acceptance Rate</label>
                         {% if message.host.acceptance_rate %}
-                        <input disabled type="text" name="acceptance_rate" id="acceptance_rate" class="form-control" placeholder='{{ message.host.acceptance_rate }}' value='{{ message.host.acceptance_rate|int }}%'>
+                        <input disabled type="text" name="acceptance_rate" id="acceptance_rate" class="form-control" placeholder='{{ message.host.get("acceptance_rate") }}' value='{{ message.host.acceptance_rate|int }}%'>
                         {% else %}
                         <input disabled type="text" name="acceptance_rate" id="acceptance_rate" class="form-control" placeholder="N/A"
                             value="N/A">
