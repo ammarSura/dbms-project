@@ -3,8 +3,15 @@ import unittest
 from decimal import Decimal
 from typing import Callable
 
+from get_reviews import get_reviews
+
+from post_review import post_review
+
+from get_best_hosts import get_best_hosts
+from get_best_listings import get_best_listing
+
 from faker import Faker
-from psycopg import Connection
+from psycopg import Connection, sql
 
 from db_utils import create_pool
 from get_host import get_host
@@ -13,8 +20,7 @@ from get_user import get_user
 from post_host import post_host
 from post_listing import post_listing
 from post_user import post_user
-from test_utils import (create_fake_host, create_fake_listing, create_fake_user, delete_keys)
-
+from test_utils import (create_fake_host, create_fake_listing, create_fake_review, create_fake_user, delete_keys)
 
 class MethodTester(unittest.TestCase):
     @classmethod
@@ -216,6 +222,64 @@ class TestListingMethods(MethodTester):
         self.assertIsNotNone(found_item)
         self.assertEqual(found_item['id'], listings[0]['id'])
 
+class TestAnalyticsMethods(MethodTester):
+    def test_best_listings_query(self):
+        query_lst = [
+            sql.SQL('WHERE best_listings.price < %(price)s')
+        ]
+        query_lst_args = {
+            'price': 10000
+        }
+        extra_query = {
+            'query_lst': query_lst,
+            'args_dic': query_lst_args
+        }
+        listings = get_best_listing(self.pool, {
+            'count': 10,
+            'extra_query': extra_query
+        })
+        self.assertIsNotNone(listings)
+        self.assertTrue(isinstance(listings, list))
+        self.assertEqual(len(listings), 10)
+
+    def test_best_hosts_query(self):
+        hosts = get_best_hosts(self.pool, {
+            'count': 10
+        })
+        self.assertIsNotNone(hosts)
+        self.assertTrue(isinstance(hosts, list))
+        self.assertEqual(len(hosts), 10)
+
+class TestReviewsMethods(MethodTester):
+    def create_fake_review_with_user_id(self):
+        test_user_id = self.test_user['id']
+        new_host = create_fake_host(self.fake, test_user_id)
+        new_host_id = post_host(self.pool, new_host, self.logger)
+        new_listing = create_fake_listing(self.fake, new_host_id)
+        new_listing_id = post_listing(self.pool, new_listing, self.logger)
+        return lambda faker: create_fake_review(faker, new_listing_id, test_user_id)
+
+    def equality_check(self, test_listing: dict, fetched_listing: dict or None):
+        self.assertIsNotNone(fetched_listing)
+        self.assertIsNotNone(fetched_listing['created_at'])
+        self.assertIsNotNone(fetched_listing['id'])
+        self.assertAlmostEqual(fetched_listing['rating'], Decimal(test_listing['rating']))
+        self.assertEqual(fetched_listing['listing_id'], test_listing['listing_id'])
+        self.assertEqual(fetched_listing['reviewer_id'], test_listing['reviewer_id'])
+        self.assertEqual(fetched_listing['comments'], test_listing['comments'])
+
+
+    def test_get_reviews(self):
+        self._test_get_item(self.create_fake_review_with_user_id(), self.equality_check, post_review, get_reviews)
+
+    def test_get_reviews_missing_param(self):
+        self._test_get_item_invalid_param(self.create_fake_review_with_user_id(), post_review, get_reviews)
+
+    def test_post_reviews(self):
+        self._test_post_item(self.create_fake_review_with_user_id(), post_review, get_reviews)
+
+    def test_post_reviews_missing_required_param(self):
+        self._test_post_item_missing_required_param('listing_id', self.create_fake_review_with_user_id(), post_review)
 
 if __name__ == '__main__':
     unittest.main()

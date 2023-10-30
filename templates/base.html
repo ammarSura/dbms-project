@@ -5,11 +5,21 @@
     {% block head %} {% endblock %}
 </head>
 <body class="bg-light container">
-    <nav class="navbar navbar-expand-lg navbar-light bg-light justify-content-between px-0">
-        <a class="navbar-brand" href="/"><h3 style="color: #f9627e;">Fairbnb</h3></a>
-        {% if user_id %}
-            <a class="navbar-brand" href="/users/{{user_id}}"><h4 style="color: #757575">Profile</h4></a>
-        {% endif %}
+    <nav class="navbar navbar-expand-lg navbar-light bg-light justify-content-between">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="/"><h3 style="color: #f9627e;">Fairbnb</h3></a>
+            <a class="navbar-brand" href="/best-listings"><h5 style="color: #757575">Top Listings</h5></a>
+            <a class="navbar-brand" href="/best-hosts"><h5 style="color: #757575">Top Hosts</h5></a>
+        </nav>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            {% if user.is_host %}
+                <a class="navbar-brand" href="/hosts/{{user.}}"><h4 style="color: #757575">Add Listing</h4></a>
+            {% endif %}
+            {% if user.id %}
+                <a class="navbar-brand" href="/users/{{user.id}}"><h4 style="color: #757575">User Profile</h4></a>
+                <a class="navbar-brand" href="/signout"><h4 style="color: #757575">Logout</h4></a>
+            {% endif %}
+        </nav>
         <!-- <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button> -->

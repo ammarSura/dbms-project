@@ -2,8 +2,14 @@
 import os
 from hashlib import md5
 
-from flask import (Flask, abort, redirect, render_template, request, session,
-                   url_for)
+from flask.sessions import SessionMixin
+
+from post_user import post_user
+
+from get_best_hosts import get_best_hosts
+from get_best_listings import get_best_listing
+
+from flask import Flask, abort, redirect, render_template, request, session, url_for
 from psycopg import sql
 from werkzeug.utils import secure_filename
 
@@ -13,7 +19,6 @@ from get_listing import get_listing
 from get_neighbourhoods import get_neighbourhoods
 from get_user import get_user
 from post_host import post_host
-from post_user import post_user
 
 pool = create_pool()
 
@@ -104,6 +109,7 @@ def get_listings():
         user_id=request.args.get('user_id'),
         cities=neighbourhood_lst,
         selected_city=args_dic['neighbourhood'],
+        user=get_user_from_session(session)
     )
 
 
@@ -136,7 +142,7 @@ def get_user_profile_handler(id):
 
     if request.method == "GET":
         message = {"user": user, "bookings": bookings}
-        return render_template('user_profile.html', message=message)
+        return render_template('user_profile.html', message=message, user=get_user_from_session(session))
 
     if request.method == "POST":
         new_picture_url = request.files.get("new_profile_picture")
@@ -157,7 +163,7 @@ def get_user_profile_handler(id):
                 "user": user,
                 "bookings": bookings,
             }
-            return render_template('user_profile.html', message=message)
+            return render_template('user_profile.html', message=message, user=get_user_from_session(session))
 
         old_password = request.form.get(
             'old_password').strip()
@@ -176,7 +182,7 @@ def get_user_profile_handler(id):
                     "user": user,
                     "bookings": bookings,
                 }
-                return render_template('user_profile.html', message=message)
+                return render_template('user_profile.html', message=message, user=get_user_from_session(session))
             else:
                 if new_password:
                     new_password = md5(
@@ -189,7 +195,7 @@ def get_user_profile_handler(id):
                             "user": user,
                             "bookings": bookings,
                         }
-                        return render_template('user_profile.html', message=message)
+                        return render_template('user_profile.html', message=message, user=get_user_from_session(session))
                     else:
                         # update user using new_password, new_name, new_email, new_picture_url
 
@@ -200,7 +206,7 @@ def get_user_profile_handler(id):
                         "user": user,
                         "bookings": bookings,
                     }
-                    return render_template('user_profile.html', message=message)
+                    return render_template('user_profile.html', message=message, user=get_user_from_session(session))
         else:
             # update user call using user.password, new_name, new_email, new_picture_url
             return redirect(f"/users/{user.get('id')}/profile")
@@ -271,6 +277,7 @@ def signout():
 
 @app.route('/signup', methods=['POST', "GET"])
 def signup_handler():
+    user = get_user_from_session(session)
     if request.method == 'GET':
         if session.get('authenticated') is True:
             return redirect("/")
@@ -314,6 +321,12 @@ def signup_handler():
 
         return redirect("/")
 
+
+def get_user_from_session(session: SessionMixin):
+    if session.get('authenticated') is True:
+        return session.get('user_id')
+    else:
+        return None
 
 # @app.route('/host', methods=['POST'])
 # def host_post_handler():

@@ -48,6 +48,14 @@ def create_fake_listing(fake, test_host_id: str):
         'location': fake.word(),
     }
 
+def create_fake_review(fake, test_listing_id: str, test_user_id: str):
+    return {
+        'listing_id': test_listing_id,
+        'reviewer_id': test_user_id,
+        'comments': fake.text(),
+        'rating': fake.random_int(min=0, max=5),
+    }
+
 
 def delete_keys(dic: dict, keys: list):
     for key in keys:

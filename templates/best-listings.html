@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block head %}
+<title>FairBnb</title>
+{% endblock %}
+{% block content %}
+<h4>
+    Top 10 Listings
+</h4>
+<ol class="list-group list-group-flush list-group-numbered">
+    {% for listing in listings %}
+        <li class="list-group-item">
+            <div>
+                <img
+                src="{{listing.picture_url}}"
+                class="card-img-top"
+                alt="listing image"
+                />
+            </div>
+            <div
+            class="d-flex justify-content-between align-items-center"
+          >
+            <small class="text-muted">
+              {% if listing.rating%}
+               {{listing.rating}}
+              {% endif %}
+              {{listing.stars}}
+            </small>
+          </div>
+            <small class="text-muted">
+                ${{listing.price}}
+            </small>
+            <h5>
+                <a class="list-group-item-action"href="/listings/{{listing.id}}">{{listing.name}}</a>
+            </h5>
+
+        </li>
+    {% endfor %}
+</ol>
+{% endblock %}
