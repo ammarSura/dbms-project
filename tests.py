@@ -3,6 +3,8 @@ import unittest
 from decimal import Decimal
 from typing import Callable
 
+from update_host import update_host
+
 from update_user import update_user
 
 from get_booking import get_bookings
@@ -174,6 +176,23 @@ class TestHostMethods(MethodTester):
     def test_post_host_missing_param(self):
         self._test_post_item_missing_param(
             'about', self.create_fake_host_with_user_id(), post_host)
+
+    def test_update_host(self):
+        update = {
+            'about': self.fake.text()
+        }
+        test_host_id = self._test_get_item(self.create_fake_host_with_user_id(
+        ), self.host_equality_check, post_host, get_host)
+        test_host_before_update = get_host(self.pool, {
+            'id': test_host_id
+        })
+        host_id = update_host(self.pool, update, test_host_id)
+        self.assertEqual(host_id, test_host_id)
+        test_host_after_update = get_host(self.pool, {
+            'id': test_host_id
+        })
+        self.assertEqual(test_host_before_update['id'], test_host_after_update['id'])
+        self.assertEqual(test_host_after_update['about'], update['about'])
 
 class TestListingMethods(MethodTester):
     def listing_equality_check(self, test_listing: dict, fetched_listing: dict or None):
