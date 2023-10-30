@@ -1,6 +1,7 @@
 from logging import Logger
 
-from psycopg import Connection, Cursor
+from psycopg import Cursor
+from psycopg_pool import ConnectionPool
 
 from db_utils import run_query, set_missing_params_to_none
 
@@ -8,8 +9,8 @@ from db_utils import run_query, set_missing_params_to_none
 def post_user_query(cur: Cursor, args_dic: dict, logger: Logger) -> int or None:
     try:
         cur.execute("""
-            INSERT INTO users (name, picture_url, email, password)
-            VALUES (%(name)s, %(picture_url)s, %(email)s, %(password)s)
+            INSERT INTO users (name, picture_url, email, password, is_host)
+            VALUES (%(name)s, %(picture_url)s, %(email)s, %(password)s, %(is_host)s)
             RETURNING id
         """, args_dic)
         result = cur.fetchone()
@@ -19,9 +20,9 @@ def post_user_query(cur: Cursor, args_dic: dict, logger: Logger) -> int or None:
         return None
 
 
-def post_user(pool: Connection, args_dic: dict, logger: Logger) -> int or None:
+def post_user(pool: ConnectionPool, args_dic: dict, logger: Logger) -> int or None:
     set_missing_params_to_none(
-        args_dic, ['name', 'picture_url', 'email', 'password'])
+        args_dic, ['name', 'picture_url', 'email', 'password', 'is_host'])
     posted_host_id = run_query(
         pool, lambda cur: post_user_query(cur, args_dic, logger))
     return posted_host_id

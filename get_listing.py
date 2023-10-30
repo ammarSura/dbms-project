@@ -17,11 +17,25 @@ def get_listing(pool: Connection, args_dic: dict) -> int or None:
         extra_query = args_dic['extra_query']
         del args_dic['extra_query']
     fields = [
-        sql.Identifier('listing', 'id'),
-        sql.Identifier('listing', 'picture_url'),
-        sql.Identifier('listing', 'name'),
-        sql.Identifier('listing', 'price'),
-        sql.Identifier('listing', 'room_type'),
-        sql.Identifier('listing', 'review_rating'),
+        sql.Identifier('listings', 'id'),
+        sql.Identifier('listings', 'picture_url'),
+        sql.Identifier('listings', 'name'),
+        sql.Identifier('listings', 'price'),
+        sql.Identifier('listings', 'room_type'),
+        sql.Identifier('listings', 'rating'),
+        sql.Identifier('listings', 'host_id'),
+        sql.Identifier('listings', 'neighbourhood'),
+        sql.Identifier('listings', 'neighbourhood_overview'),
+        sql.Identifier('listings', 'location'),
+        sql.Identifier('listings', 'coord'),
+        sql.Identifier('listings', 'property_type'),
+        sql.Identifier('listings', 'accommodates'),
+        sql.Identifier('listings', 'bathrooms'),
+        sql.Identifier('listings', 'bedrooms'),
+        sql.Identifier('listings', 'beds'),
+        sql.Identifier('listings', 'amenities'),
+        sql.Identifier('listings', 'created_at'),
+        sql.Identifier('listings', 'updated_at'),
+
     ]
-    return run_query(pool, lambda cur: select_query(cur, fields, 'listing', args_dic, extra_query, count, page))
+    return run_query(pool, lambda cur: select_query(cur, fields, 'listings', args_dic, extra_query, count, page))

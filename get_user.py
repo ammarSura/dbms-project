@@ -8,9 +8,9 @@ from db_utils import run_query, set_missing_params_to_none
 
 def get_user_query(cur: Cursor, args_dic: dict) -> dict or None:
     cur.execute("""
-        SELECT * FROM users
-        WHERE id = %(id)s
-    """, args_dic)
+        SELECT name, is_host, picture_url, email, created_at, updated_at, id FROM users
+        WHERE id = %s
+    """, [args_dic['id']])
     result = cur.fetchone()
     return result
 

@@ -7,7 +7,7 @@ from db_utils import run_query, set_missing_params_to_none
 
 def get_host_query(cur: Cursor, args_dic: dict):
     cur.execute("""
-        SELECT * FROM host
+        SELECT * FROM hosts
         WHERE id = %s
     """,
                 [args_dic['id']]

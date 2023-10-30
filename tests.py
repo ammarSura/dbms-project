@@ -13,8 +13,7 @@ from get_user import get_user
 from post_host import post_host
 from post_listing import post_listing
 from post_user import post_user
-from test_utils import (create_fake_host, create_fake_listing,
-                        create_fake_user, delete_keys)
+from test_utils import (create_fake_host, create_fake_listing, create_fake_user, delete_keys)
 
 
 class MethodTester(unittest.TestCase):
@@ -54,7 +53,7 @@ class MethodTester(unittest.TestCase):
 
         return listings
 
-    def _test_get_item_invalid_param(self, test_gen: Callable[[Faker], dict], post_item: Callable[[Connection, dict], id or None], get_item: Callable[[Connection, dict], dict or list or None]):
+    def _test_get_item_invalid_param(self, test_gen: Callable[[Faker], dict], post_item: Callable[[Connection, dict], int or None], get_item: Callable[[Connection, dict], dict or list or None]):
         test_item = test_gen(self.fake)
         posted_item_id = post_item(self.pool, test_item, self.logger)
         fetched_items = get_item(self.pool, {
@@ -89,7 +88,6 @@ class MethodTester(unittest.TestCase):
         posted_item_id = post_item(self.pool, new_item, self.logger)
         self.assertIsNotNone(posted_item_id)
 
-
 class TestUserMethods(MethodTester):
     def user_equality_check(self, test_user: dict, fetched_user: dict or None):
         self.assertIsNotNone(fetched_user)
@@ -99,37 +97,31 @@ class TestUserMethods(MethodTester):
         del fetched_user['updated_at']
         del fetched_user['id']
         del test_user['password']
-
         self.assertDictEqual(test_user, fetched_user)
 
     def test_get_user(self):
         self._test_get_item(
             create_fake_user, self.user_equality_check, post_user, get_user)
-
     def test_get_user_missing_param(self):
         self._test_get_item_invalid_param(
             create_fake_user, post_user, get_user)
-
     def test_post_user(self):
         self._test_post_item(create_fake_user, post_user, get_user)
-
     def test_post_user_missing_required_param(self):
         return self._test_post_item_missing_required_param('name', create_fake_user, post_user)
-
     def test_post_user_missing_param(self):
         return self._test_post_item_missing_param('picture_url', create_fake_user, post_user)
-
 
 class TestHostMethods(MethodTester):
     def host_equality_check(self, test_host: dict, fetched_host: dict or None):
         self.assertIsNotNone(fetched_host)
-        self.assertIsNotNone(fetched_host['created_at'])
+        self.assertIsNotNone(fetched_host['host_since'])
         self.assertIsNotNone(fetched_host['updated_at'])
         acceptance_rate = fetched_host['acceptance_rate'], test_host['acceptance_rate']
         response_rate = fetched_host['response_rate'], test_host['response_rate']
         self.assertAlmostEqual(acceptance_rate[0], Decimal(acceptance_rate[1]))
         self.assertAlmostEqual(response_rate[0], Decimal(response_rate[1]))
-        del fetched_host['id'], fetched_host['created_at'], fetched_host['updated_at']
+        del fetched_host['id'], fetched_host['host_since'], fetched_host['updated_at']
         del fetched_host['acceptance_rate'], fetched_host['response_rate']
         del test_host['response_rate'], test_host['acceptance_rate']
 
@@ -150,15 +142,12 @@ class TestHostMethods(MethodTester):
     def test_post_host(self):
         self._test_post_item(
             self.create_fake_host_with_user_id(), post_host, get_host)
-
     def test_post_host_missing_required_param(self):
         self._test_post_item_missing_required_param(
             'user_id', self.create_fake_host_with_user_id(), post_host)
-
     def test_post_host_missing_param(self):
         self._test_post_item_missing_param(
             'about', self.create_fake_host_with_user_id(), post_host)
-
 
 class TestListingMethods(MethodTester):
     def listing_equality_check(self, test_listing: dict, fetched_listing: dict or None):
@@ -168,14 +157,17 @@ class TestListingMethods(MethodTester):
         self.assertIsNotNone(fetched_listing['updated_at'])
         self.assertAlmostEqual(
             fetched_listing['price'], Decimal(test_listing['price']))
-        self.assertAlmostEqual(fetched_listing['review_rating'], Decimal(
-            test_listing['review_rating']))
+        self.assertAlmostEqual(fetched_listing['rating'], Decimal(
+            test_listing['rating']))
         self.assertListEqual(
             test_listing['amenities'], fetched_listing['amenities'])
         delete_keys(fetched_listing, [
-                    'id', 'created_at', 'updated_at', 'price', 'review_rating', 'coors'])
-        delete_keys(test_listing, ['price', 'review_rating', 'coors'])
+                    'id', 'created_at', 'updated_at', 'price', 'rating', 'coord', 'amenities'])
+        delete_keys(test_listing, ['price', 'rating', 'coord', 'amenities'])
 
+        x = set(fetched_listing.items())
+        y = set(test_listing.items())
+        print('qwe', x.difference(y), y.difference(x))
         self.assertDictEqual(test_listing, fetched_listing)
 
     def create_fake_listing_with_host_id(self):
@@ -183,7 +175,7 @@ class TestListingMethods(MethodTester):
         new_host = create_fake_host(self.fake, test_user_id)
         new_host_id = post_host(self.pool, new_host, self.logger)
 
-        return lambda faker: create_fake_listing(faker, test_user_id, new_host_id)
+        return lambda faker: create_fake_listing(faker, new_host_id)
 
     def test_get_host(self):
         self._test_get_item(self.create_fake_listing_with_host_id(
