@@ -20,4 +20,8 @@ def get_reviews(pool, args_dic):
         sql.Identifier('reviews','rating'),
         sql.Identifier('reviews', 'created_at'),
     ]
-    return run_query(pool, lambda cur: select_query(cur, fields, 'reviews', args_dic))
+    count = None
+    if('count' in args_dic):
+        count = args_dic['count']
+        del args_dic['count']
+    return run_query(pool, lambda cur: select_query(cur, fields, 'reviews', args_dic, None, count))
