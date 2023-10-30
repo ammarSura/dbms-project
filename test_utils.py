@@ -1,3 +1,4 @@
+import datetime
 from faker import Faker
 
 from get_user import get_user
@@ -54,6 +55,18 @@ def create_fake_review(fake, test_listing_id: str, test_user_id: str):
         'reviewer_id': test_user_id,
         'comments': fake.text(),
         'rating': fake.random_int(min=0, max=5),
+    }
+
+def create_fake_booking(fake, test_listing_id: str, test_user_id: str):
+    start_date = fake.date_time_between(start_date='+1d', end_date='+2d')
+    end_date = fake.date_time_between(start_date='+3d', end_date='+4d')
+    return {
+        'listing_id': test_listing_id,
+        'booker_id': test_user_id,
+        'start_date': start_date,
+        'end_date': end_date,
+        'cost': fake.random_int(min=0, max=1000000) / 10,
+        'num_guests': fake.random_int(min=1, max=15),
     }
 
 

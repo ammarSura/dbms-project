@@ -3,6 +3,10 @@ import unittest
 from decimal import Decimal
 from typing import Callable
 
+from get_booking import get_bookings
+
+from post_booking import post_booking
+
 from get_reviews import get_reviews
 
 from post_review import post_review
@@ -20,7 +24,7 @@ from get_user import get_user
 from post_host import post_host
 from post_listing import post_listing
 from post_user import post_user
-from test_utils import (create_fake_host, create_fake_listing, create_fake_review, create_fake_user, delete_keys)
+from test_utils import (create_fake_booking, create_fake_host, create_fake_listing, create_fake_review, create_fake_user, delete_keys)
 
 class MethodTester(unittest.TestCase):
     @classmethod
@@ -269,7 +273,7 @@ class TestReviewsMethods(MethodTester):
         self.assertEqual(fetched_listing['comments'], test_listing['comments'])
 
 
-    def test_get_reviews(self):
+    def test_get_review(self):
         self._test_get_item(self.create_fake_review_with_user_id(), self.equality_check, post_review, get_reviews)
 
     def test_get_reviews_missing_param(self):
@@ -281,5 +285,39 @@ class TestReviewsMethods(MethodTester):
     def test_post_reviews_missing_required_param(self):
         self._test_post_item_missing_required_param('listing_id', self.create_fake_review_with_user_id(), post_review)
 
+    def test_get_reviews(self):
+        self._test_get_items(self.create_fake_review_with_user_id(), self.equality_check, post_review, get_reviews, {'count': 11})
+
+class TestBookingMethods(MethodTester):
+    def create_fake_booking_with_user_id(self):
+        test_user_id = self.test_user['id']
+        new_host = create_fake_host(self.fake, test_user_id)
+        new_host_id = post_host(self.pool, new_host, self.logger)
+        new_listing = create_fake_listing(self.fake, new_host_id)
+        new_listing_id = post_listing(self.pool, new_listing, self.logger)
+        return lambda faker: create_fake_booking(faker, new_listing_id, test_user_id)
+    def equality_check(self, test_listing: dict, fetched_listing: dict or None):
+        self.assertIsNotNone(fetched_listing)
+        self.assertIsNotNone(fetched_listing['created_at'])
+        self.assertIsNotNone(fetched_listing['id'])
+        self.assertAlmostEqual(fetched_listing['cost'], Decimal(test_listing['cost']))
+        self.assertEqual(fetched_listing['listing_id'], test_listing['listing_id'])
+        self.assertEqual(fetched_listing['booker_id'], test_listing['booker_id'])
+        # self.assertEqual(fetched_listing['start_date'], test_listing['start_date'])
+        # self.assert(fetched_listing['end_date'], test_listing['end_date'])
+        pass
+
+    def test_get_booking(self):
+        self._test_get_item(self.create_fake_booking_with_user_id(), self.equality_check, post_booking, get_bookings)
+
+    def test_get_booking_missing_param(self):
+        self._test_get_item_invalid_param(self.create_fake_booking_with_user_id(), post_booking, get_bookings)
+
+    def test_post_booking(self):
+        self._test_post_item(self.create_fake_booking_with_user_id(), post_booking, get_bookings)
+
+    def test_get_bookings(self):
+        self._test_get_items(self.create_fake_booking_with_user_id(), self.equality_check, post_booking, get_bookings, {'count': 11})
+    # def
 if __name__ == '__main__':
     unittest.main()
