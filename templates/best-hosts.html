@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block head %}
+<title>FairBnb</title>
+{% endblock %}
+{% block content %}
+<h4>
+    Top 10 Hosts
+</h4>
+<ol class="list-group list-group-flush list-group-numbered">
+    {% for host in hosts %}
+        <li class="list-group-item">
+            <div>
+                <img
+                src="{{host.picture_url}}"
+                class="card-img-top"
+                alt="host image"
+                />
+            </div>
+            <div
+            class="d-flex justify-content-between align-items-center"
+          >
+            <small class="text-muted">
+              {% if host.rating%}
+               {{host.rating}}
+              {% endif %}
+              {{host.stars}}
+            </small>
+        </div>
+            <h5>
+                <a class="list-group-item-action"href="/hosts/{{host.id}}">{{host.name}}</a>
+            </h5>
+            <h6>
+                <a class="list-group-item-action"href="/listings/{{host.top_listings_id}}">Take a look at their highest rated ({{host.max_rating}}⭐) property!</a>
+            </h6>
+
+        </li>
+    {% endfor %}
+</ol>
+{% endblock %}
