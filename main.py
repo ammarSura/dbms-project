@@ -1,12 +1,11 @@
 
 import os
-import sys
 from hashlib import md5
 
 from flask import Flask, abort, redirect, render_template, request, url_for
 from werkzeug.utils import secure_filename
 
-from db_utils import create_pool, query_append_check
+from db_utils import create_pool
 from get_host import get_host
 from get_listing import get_listing
 from get_user import get_user

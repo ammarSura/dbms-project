@@ -1,6 +1,7 @@
-from logging import Logger
-from psycopg import Connection, Cursor
 import sys
+from logging import Logger
+
+from psycopg import Connection, Cursor
 
 from db_utils import run_query, set_missing_params_to_none
 

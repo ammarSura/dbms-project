@@ -15,6 +15,7 @@ def create_fake_host(fake: Faker, user_id: int):
     }
     return new_host
 
+
 def create_fake_user(fake: Faker):
     return {
         'name': fake.name(),
@@ -22,6 +23,7 @@ def create_fake_user(fake: Faker):
         'email': fake.unique.email(),
         'password': fake.password()
     }
+
 
 def create_fake_listing(fake, test_user_id: str, test_host_id: str):
     return {
@@ -42,6 +44,7 @@ def create_fake_listing(fake, test_user_id: str, test_host_id: str):
         'neighborhood_overview': fake.text(),
         'review_rating': fake.random_int(min=0, max=5),
     }
+
 
 def delete_keys(dic: dict, keys: list):
     for key in keys:
