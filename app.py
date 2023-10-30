@@ -9,7 +9,7 @@ from flask import Flask, abort, redirect, render_template, request, url_for
 from psycopg import sql
 from werkzeug.utils import secure_filename
 
-from db_utils import create_pool, query_append_check
+from db_utils import create_pool, query_append_check, run_query, select_query
 from get_host import get_host
 from get_listing import get_listing
 from get_neighbourhoods import get_neighbourhoods
@@ -21,6 +21,7 @@ pool = create_pool()
 
 app = Flask(__name__)
 app.config.from_pyfile('env.py')
+app.secret_key = b'eeabb196a8b469e1ca9f6c9f0133312cc2169632bd0491ab96d47e0ecd165f99'
 
 
 @app.route('/')
@@ -60,9 +61,9 @@ def get_listings():
         extra_query.append(
             sql.SQL("price <= %(max_price)s")
         )
-    if(query_lst_args['check_in'] or query_lst_args['check_out']):
+    if (query_lst_args['check_in'] or query_lst_args['check_out']):
         query_append_check(extra_query)
-        if(query_lst_args['check_in'] and query_lst_args['check_out']):
+        if (query_lst_args['check_in'] and query_lst_args['check_out']):
             extra_query.append(
                 sql.SQL("listings.id NOT IN (SELECT DISTINCT listing_id FROM booking WHERE start_date <= %(check_in)s AND end_date >= %(check_in)s OR start_date <= %(check_out)s AND end_date >= %(check_out)s AND listing_id = listings.id)")
             )
@@ -74,7 +75,7 @@ def get_listings():
             extra_query.append(
                 sql.SQL("listings.id NOT IN (SELECT DISTINCT listing_id FROM booking WHERE start_date <= %(check_out)s AND end_date >= %(check_out)s AND listing_id = listings.id)")
             )
-    if(amenities):
+    if (amenities):
         for i in range(len(amenities)):
             amenity = amenities[i]
             query_append_check(extra_query)
@@ -193,20 +194,36 @@ def get_user_profile_handler(id):
             return redirect(f"/users/{user.get('id')}/profile")
 
 
-@app.route('/signin', methods=['POST'])
+@app.route('/signin', methods=['GET', 'POST'])
 def login_handler():
     if request.method == 'GET':
-        return render_template('signin.html')
+        if session.get('authenticated') is True:
+            return redirect("/")
+
+        return render_template('signin.html', message={"user_id": None, "authenticated": False})
     if request.method == "POST":
         email = request.form.get("email").strip()
         password = md5(request.form.get(
             "password").strip().encode("utf-8")).hexdigest()
-        query = "SELECT COUNT(*) FROM users WHERE username = %s AND password = %s"
-        # run query func, get bool
-        if True:
-            # return redirect("/")
-            pass
+        # get user
+        args = {"email": email, "password": password}
+        fields = [sql.Identifier("users", "id")]
+        user = run_query(pool, lambda cur: select_query(
+            cur, fields, 'users', args))
+        if user:
+            print(user)
+            session['authenticated'] = True
+            session['user_id'] = user
+            return redirect("/")
+
         return render_template("signin.html", message="Incorrect details")
+
+
+@app.route("/signout", methods=["POST"])
+def signout():
+    session.pop("authenticated")
+    session.pop("user_id")
+    return redirect("/")
 
 
 @app.route('/signup', methods=['POST', "GET"])
