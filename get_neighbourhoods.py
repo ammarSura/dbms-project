@@ -5,7 +5,7 @@ from db_utils import run_query
 def get_neighbhourhoods_query(cur: Connection) -> int or None:
     return cur.execute(
         """
-        SELECT DISTINCT neighborhood FROM listing;
+        SELECT DISTINCT neighborhood FROM listing
         ORDER BY neighborhood;
         """
     ).fetchall()
