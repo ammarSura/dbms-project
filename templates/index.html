@@ -78,11 +78,12 @@
     <div class="row mt-4">
       {% for listing in listings%}
         <div class="col-md-4">
-          <div class="card mb-4 shadow-sm" style="height: 17.5rem;">
+          <div class="card mb-4 shadow-sm" style="height: 30rem;">
             <img
               src="{{listing.picture_url}}"
               class="card-img-top"
               alt="listing image"
+              height="100%"
             />
             <div class="card-body">
               <a href="/listing/{{listing.id}}" style="text-decoration: inherit; color: inherit; cursor: pointer;">

@@ -218,6 +218,11 @@ def login_handler():
         return render_template("signin.html", message="Incorrect details")
 
 
+@app.route("/signout", methods=["POST"])
+def signout():
+    pass
+
+
 @app.route('/signup', methods=['POST', "GET"])
 def signup_handler():
     if request.method == 'GET':
