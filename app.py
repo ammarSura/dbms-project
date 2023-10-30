@@ -120,7 +120,6 @@ def get_user_profile_handler(id):
     bookings = []  # get bookings
     if (user == None):
         abort(404, 'User not found')
-    print(user)
 
     if request.method == "GET":
         message = {"user": user, "bookings": bookings}
