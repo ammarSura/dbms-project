@@ -99,3 +99,38 @@ def query_append_check(query_lst: list):
             sql.SQL(
                 "\nWHERE ")
         )
+
+def update_query(cur, args_dic, id, table_name):
+    try:
+        update_lst = [
+            sql.SQL('UPDATE {table_name}').format(
+                table_name=sql.Identifier(table_name)
+            )
+        ]
+        for key in args_dic:
+            if args_dic[key]:
+                if(len(update_lst) < 2):
+                    update_lst.append(sql.SQL('\nSET '))
+
+                update_lst.append(sql.SQL('{} = {},').format(
+                    sql.Identifier(key),
+                    sql.Literal(args_dic[key])
+                ))
+        if(len(update_lst) < 2):
+                return None
+        update_lst.append(sql.SQL('updated_at = NOW()'))
+        update_lst.append(sql.SQL('\nWHERE id = %(id)s'))
+        update_lst.append(sql.SQL('\nRETURNING id'))
+        args_dic['id'] = id
+        query =sql.Composed(update_lst)
+        cursor = ClientCursor(create_pool().getconn())
+        print('mogrify123', cursor.mogrify(query, args_dic), file=sys.stdout)
+        cur.execute(
+            query,
+            args_dic
+        )
+        result = cur.fetchone()
+        cur.close()
+        return result['id']
+    except Exception as e:
+        return None
