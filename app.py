@@ -2,6 +2,9 @@
 import os
 from hashlib import md5
 
+from get_best_hosts import get_best_hosts
+from get_best_listings import get_best_listing
+
 from flask import Flask, abort, redirect, render_template, request, url_for
 from psycopg import sql
 from werkzeug.utils import secure_filename
@@ -271,3 +274,45 @@ def listing_get_handler(id):
         "host": host
     }
     return render_template('listingDetail.html', message=message)
+
+@app.route('/best-listings', methods=['GET'])
+def best_listings_get_handler():
+    args_dic = {
+        'count': 10
+    }
+    query_lst = []
+
+    if(request.args.get('budget')):
+        query_lst.extend([
+            sql.SQL('\nWHERE price < 10000'),
+            sql.SQL('\nORDER BY rating DESC, price')
+        ]
+    )
+
+    extra_query = {
+        'query_lst': query_lst,
+        'args_dic': {}
+    }
+
+    args_dic['extra_query'] = extra_query
+    print("args_dic: 123", args_dic)
+    listings = get_best_listing(pool, args_dic)
+    listings_with_stars = []
+    for listing in listings:
+        listing['stars'] = "⭐"*int(listing['rating']) if listing['rating'] else "No reviews"
+        listings_with_stars.append(listing)
+    return render_template('best-listings.html', listings=listings_with_stars)
+
+@app.route('/best-hosts', methods=['GET'])
+def best_hosts_get_handler():
+    args_dic = {
+        'count': 10
+    }
+
+    hosts = get_best_hosts(pool, args_dic)
+    hosts_with_stars = []
+    for host in hosts:
+        host['stars'] = "⭐"*int(host['avg_rating']) if host['avg_rating'] else "No reviews"
+        host['rating'] = float(host['avg_rating'])
+        hosts_with_stars.append(host)
+    return render_template('best-hosts.html', hosts=hosts_with_stars)
