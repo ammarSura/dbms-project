@@ -1,6 +1,9 @@
+
+import os
 from hashlib import md5
 
-from flask import Flask, abort, redirect, render_template, request
+from flask import Flask, abort, redirect, render_template, request, url_for
+from werkzeug.utils import secure_filename
 
 from db_utils import create_pool
 from get_host import get_host
@@ -41,6 +44,16 @@ def get_user_profile_handler(id):
         return render_template('user_profile.html', message=message)
 
     if request.method == "POST":
+        new_picture_url = request.files.get("new_profile_picture")
+        if not new_picture_url:
+            new_picture_url = user.get("picture_url")
+        else:
+            fn = md5(secure_filename(
+                new_picture_url.filename.split(".")[0]).strip().encode("utf-8")).hexdigest() + "." + new_picture_url.filename.split(".")[1]
+            image_path = os.path.join(os.getcwd(), "static", "images", fn)
+            new_picture_url.save(image_path)
+            new_picture_url = url_for("static", filename="images/" + fn)
+
         new_name = request.form.get('new_name').strip()
         new_email = request.form.get('new_email').strip()
         if not new_name or not new_email:
@@ -51,15 +64,18 @@ def get_user_profile_handler(id):
             }
             return render_template('user_profile.html', message=message)
 
-        old_password = md5(request.form.get(
-            'old_password').strip().encode("utf-8")).hexdigest()
-        new_password = md5(request.form.get(
-            'new_password').strip().encode("utf-8")).hexdigest()
-        confirm_password = md5(request.form.get(
-            'confirm_password').strip().encode("utf-8")).hexdigest()
+        old_password = request.form.get(
+            'old_password').strip()
+        new_password = request.form.get(
+            'new_password').strip()
+        confirm_password = request.form.get(
+            'confirm_password').strip()
 
         if old_password:
-            if old_password != user.password:
+            old_password = md5(old_password.encode("utf-8")).hexdigest()
+            if old_password != user.get("password"):
+                print("here")
+                print(old_password)
                 message = {
                     "error": "Old password is incorrect! Please try again.",
                     "user": user,
@@ -68,6 +84,10 @@ def get_user_profile_handler(id):
                 return render_template('user_profile.html', message=message)
             else:
                 if new_password:
+                    new_password = md5(
+                        new_password.encode("utf-8")).hexdigest()
+                    confirm_password = md5(
+                        confirm_password.encode("utf-8")).hexdigest()
                     if confirm_password != new_password:
                         message = {
                             "error": "New passwords don't match! Try again.",
@@ -76,8 +96,8 @@ def get_user_profile_handler(id):
                         }
                         return render_template('user_profile.html', message=message)
                     else:
-                        # update user using new_password, new_name, new_email
-                        return redirect(f"/users/{user.id}/profile")
+                        # update user using new_password, new_name, new_email, new_picture_url
+                        return redirect(f"/users/{user.get('id')}/profile")
                 else:
                     message = {
                         "error": "Enter new password to update!",
@@ -86,15 +106,8 @@ def get_user_profile_handler(id):
                     }
                     return render_template('user_profile.html', message=message)
         else:
-            # update user call using user.password, new_name, new_email
-            return redirect(f"/users/{user.id}/profile")
-
-
-@app.route('/users/<id>/update_profile', methods=["POST"])
-def update_user_profile(id):
-    user = get_user(pool, {'id': id})
-    new_name = request.form.get('new_name')
-    new_email = request.form.get('new_email')
+            # update user call using user.password, new_name, new_email, new_picture_url
+            return redirect(f"/users/{user.get('id')}/profile")
 
 
 @app.route('/signin', methods=['POST', "GET"])
