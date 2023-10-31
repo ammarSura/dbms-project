@@ -2,23 +2,24 @@
 import os
 from hashlib import md5
 
-from flask.sessions import SessionMixin
-
-from post_user import post_user
-
-from get_best_hosts import get_best_hosts
-from get_best_listings import get_best_listing
-
-from flask import Flask, abort, redirect, render_template, request, session, url_for
+from flask import (Flask, abort, redirect, render_template, request, session,
+                   url_for)
 from psycopg import sql
 from werkzeug.utils import secure_filename
 
 from db_utils import create_pool, query_append_check, run_query, select_query
+from get_best_hosts import get_best_hosts
+from get_best_listings import get_best_listing
 from get_host import get_host
 from get_listing import get_listing
 from get_neighbourhoods import get_neighbourhoods
 from get_user import get_user
 from post_host import post_host
+from post_user import post_user
+from update_host import update_host
+from update_user import update_user
+from get_booking import get_bookings
+from get_reviews import get_reviews
 
 pool = create_pool()
 
@@ -27,7 +28,7 @@ app.config.from_pyfile('env.py')
 app.secret_key = b'eeabb196a8b469e1ca9f6c9f0133312cc2169632bd0491ab96d47e0ecd165f99'
 
 
-### LISTINGS ###
+######## LISTINGS ########
 @app.route('/')
 def get_listings():
     args_dic = {
@@ -103,46 +104,61 @@ def get_listings():
         listing['stars'] = "⭐"*int(listing['rating']
                                    ) if listing['rating'] else "No reviews"
         listings_with_starts.append(listing)
-    return render_template(
-        'index.html',
-        listings=listings_with_starts,
-        user_id=request.args.get('user_id'),
-        cities=neighbourhood_lst,
-        selected_city=args_dic['neighbourhood'],
-        user=get_user_from_session(session)
-    )
+    message = {
+        "authenticated": session.get("authenticated"),
+        "user_id": session.get('user_id'),
+        "host_id": session.get("host_id"),
+        "listings": listings_with_starts,
+        "cities": neighbourhood_lst,
+        "selected_city": args_dic['neighbourhood']
+    }
+    return render_template('index.html', message=message)
 
 
 @app.route('/listings/<id>', methods=['GET'])
 def listing_get_handler(id):
     listing = get_listing(pool, {'id': id})
     host = get_host(pool, {"id": listing.get("host_id")})
-    user = None
-    if session.get("user_id"):
-        user = get_user(pool, {"id": session.get("user_id")})
+    host_user = get_user(pool, {"id": host.get("user_id")})
+    reviews = get_reviews(pool, {'listing_id': id, 'count': 10})
+    review_users = []
+    for review in reviews:
+        review_user = get_user(pool, {'id': review.get('reviewer_id')})
+        review_users.append(review_user)
+
     message = {
+        "authenticated": session.get("authenticated"),
+        "user_id": session.get('user_id'),
+        "host_id": session.get("host_id"),
         "listing": listing,
         "host": host,
-        "user": user
+        "host_user": host_user,
+        "reviews": reviews,
+        "review_users": review_users
     }
     return render_template('listingDetail.html', message=message)
 
 
-### USERS ###
+######## USERS ########
 @app.route('/users/<id>/profile', methods=['GET', "POST"])
 def get_user_profile_handler(id):
     if str(session.get("user_id")) != id:
-        print("here")
         return redirect("/")
 
     user = get_user(pool, {'id': id})
-    bookings = []  # get bookings
-    if (user == None):
+    bookings = get_bookings(pool, {'booker_id': id})
+    if user is None:
         abort(404, 'User not found')
 
     if request.method == "GET":
-        message = {"user": user, "bookings": bookings}
-        return render_template('user_profile.html', message=message, user=get_user_from_session(session))
+        message = {
+            "authenticated": session.get("authenticated"),
+            "user_id": session.get('user_id'),
+            "host_id": session.get("host_id"),
+            "user": user,
+            "bookings": bookings
+        }
+        return render_template('user_profile.html', message=message)
 
     if request.method == "POST":
         new_picture_url = request.files.get("new_profile_picture")
@@ -159,11 +175,14 @@ def get_user_profile_handler(id):
         new_email = request.form.get('new_email').strip()
         if not new_name or not new_email:
             message = {
+                "authenticated": session.get("authenticated"),
+                "user_id": session.get('user_id'),
+                "host_id": session.get("host_id"),
                 "error": "Enter name or email to update!",
                 "user": user,
                 "bookings": bookings,
             }
-            return render_template('user_profile.html', message=message, user=get_user_from_session(session))
+            return render_template('user_profile.html', message=message)
 
         old_password = request.form.get(
             'old_password').strip()
@@ -175,14 +194,15 @@ def get_user_profile_handler(id):
         if old_password:
             old_password = md5(old_password.encode("utf-8")).hexdigest()
             if old_password != user.get("password"):
-                print("here")
-                print(old_password)
                 message = {
+                    "authenticated": session.get("authenticated"),
+                    "user_id": session.get('user_id'),
+                    "host_id": session.get("host_id"),
                     "error": "Old password is incorrect! Please try again.",
                     "user": user,
                     "bookings": bookings,
                 }
-                return render_template('user_profile.html', message=message, user=get_user_from_session(session))
+                return render_template('user_profile.html', message=message)
             else:
                 if new_password:
                     new_password = md5(
@@ -191,54 +211,125 @@ def get_user_profile_handler(id):
                         confirm_password.encode("utf-8")).hexdigest()
                     if confirm_password != new_password:
                         message = {
+                            "authenticated": session.get("authenticated"),
+                            "user_id": session.get('user_id'),
+                            "host_id": session.get("host_id"),
                             "error": "New passwords don't match! Try again.",
                             "user": user,
                             "bookings": bookings,
                         }
-                        return render_template('user_profile.html', message=message, user=get_user_from_session(session))
+                        return render_template('user_profile.html', message=message)
                     else:
-                        # update user using new_password, new_name, new_email, new_picture_url
+                        args = {
+                            "name": new_name,
+                            "email": new_email,
+                            "picture_url": new_picture_url,
+                            "password": new_password
+                        }
+                        user_id = update_user(pool, args, id)
+                        if user_id is None:
+                            message = {
+                                "authenticated": session.get("authenticated"),
+                                "user_id": session.get('user_id'),
+                                "host_id": session.get("host_id"),
+                                "error": "Something went wrong! Please try again.",
+                                "user": user,
+                                "bookings": bookings,
+                            }
+                            return render_template('user_profile.html', message=message)
 
                         return redirect(f"/users/{user.get('id')}/profile")
                 else:
                     message = {
+                        "authenticated": session.get("authenticated"),
+                        "user_id": session.get('user_id'),
+                        "host_id": session.get("host_id"),
                         "error": "Enter new password to update!",
                         "user": user,
                         "bookings": bookings,
                     }
-                    return render_template('user_profile.html', message=message, user=get_user_from_session(session))
+                    return render_template('user_profile.html', message=message)
         else:
-            # update user call using user.password, new_name, new_email, new_picture_url
+            args = {
+                "name": new_name,
+                "email": new_email,
+                "picture_url": new_picture_url,
+                "password": user.get("password")
+            }
+            user_id = update_user(pool, args, id)
+            if user_id is None:
+                message = {
+                    "authenticated": session.get("authenticated"),
+                    "user_id": session.get('user_id'),
+                    "host_id": session.get("host_id"),
+                    "error": "Something went wrong! Please try again.",
+                    "user": user,
+                    "bookings": bookings,
+                }
+                return render_template('user_profile.html', message=message)
+
             return redirect(f"/users/{user.get('id')}/profile")
 
 
-### HOSTS ###
+######## HOSTS ########
 @app.route("/hosts/<id>/profile", methods=["GET", "POST"])
 def host_profile(id):
     host = get_host(pool, {"id": id})
     if host == None:
         abort(404, 'Host not found')
-    user = get_user(pool, {"id": host.get("user_id")})
+
+    host_user = get_user(pool, {"id": host.get("user_id")})
 
     if request.method == "GET":
+        message = {
+            "authenticated": session.get("authenticated"),
+            "user_id": session.get('user_id'),
+            "host_id": session.get("host_id"),
+            "host": host,
+            "host_user": host_user
+        }
         if str(session.get("host_id")) != id:
-            return render_template("host_view_profile.html", message={"host": host, "user": user})
+            template = "host_view_profile.html"
+        else:
+            template = "host_edit_profile.html"
 
-        return render_template("host_edit_profile.html", message={"host": host, "user": user})
+        return render_template(template, message=message)
 
     if request.method == "POST":
-        print(request.form)
-        return render_template("host_edit_profile.html", message={"host": host, "user": user})
+        args = {
+            "about": request.form.get("about"),
+            "location": request.form.get("location"),
+            "neighbourhood": request.form.get("neighbourhood")
+        }
+        host_id = update_host(pool, args, id)
+
+        if not host_id:
+            message = {
+                "authenticated": session.get("authenticated"),
+                "user_id": session.get('user_id'),
+                "host_id": session.get("host_id"),
+                "host": host,
+                "host_user": host_user,
+                "error": "Something went wrong. Please try again."
+            }
+            return render_template("host_edit_profile.html", message=message)
+
+        return redirect(f"/hosts/{host_id}/profile")
 
 
-### AUTHENTICATION ###
+######## AUTHENTICATION ########
 @app.route('/signin', methods=['GET', 'POST'])
 def login_handler():
     if request.method == 'GET':
         if session.get('authenticated') is True:
             return redirect("/")
 
-        return render_template('signin.html', message={})
+        message = {
+            "authenticated": session.get("authenticated"),
+            "user_id": session.get('user_id'),
+            "host_id": session.get("host_id")
+        }
+        return render_template('signin.html', message=message)
 
     if request.method == "POST":
         email = request.form.get("email").strip()
@@ -247,23 +338,39 @@ def login_handler():
 
         # get user
         args = {"email": email, "password": password}
-        fields = [sql.Identifier("users", "id"),
-                  sql.Identifier("users", "is_host")]
-        user = get_user(pool, args, fields)
+        fields = [
+            sql.Identifier("users", "id"),
+            sql.Identifier("users", "is_host")
+        ]
+        user = run_query(pool, lambda cur: select_query(
+            cur, fields, 'users', args))
 
         if user.get("id"):
             session['authenticated'] = True
             session['user_id'] = user.get("id")
             if user.get("is_host"):
                 session["host_id"] = run_query(
-                    pool, lambda cur: select_query(
-                        cur, [sql.Identifier("hosts", "id")], 'hosts', {"user_id": user.get("id")})).get("id")
+                    pool,
+                    lambda cur: select_query(
+                        cur,
+                        [sql.Identifier("hosts", "id")],
+                        'hosts',
+                        {"user_id": user.get("id")}
+                    )
+                ).get("id")
+
             else:
                 session["host_id"] = None
 
             return redirect("/")
 
-        return render_template("signin.html", message={"error": "Incorrect details"})
+        message = {
+            "authenticated": session.get("authenticated"),
+            "user_id": session.get('user_id'),
+            "host_id": session.get("host_id"),
+            "error": "Incorrect details!"
+        }
+        return render_template("signin.html", message=message)
 
 
 @app.route("/signout", methods=["POST"])
@@ -276,11 +383,16 @@ def signout():
 
 @app.route('/signup', methods=['POST', "GET"])
 def signup_handler():
-    user = get_user_from_session(session)
     if request.method == 'GET':
         if session.get('authenticated') is True:
             return redirect("/")
-        return render_template('signup.html', message={})
+
+        message = {
+            "authenticated": session.get("authenticated"),
+            "user_id": session.get('user_id'),
+            "host_id": session.get("host_id")
+        }
+        return render_template('signup.html', message=message)
 
     if request.method == "POST":
         # check passwords
@@ -294,17 +406,29 @@ def signup_handler():
         # get remaining values
         email = request.form.get("email").strip()
         name = request.form.get("name").strip()
+
         is_host = request.form.get("is_host")
         if is_host is None:
             is_host = False
         else:
             is_host = True
-        user_args = {"name": name, "email": email,
-                     "password": password, "is_host": is_host}
+
+        user_args = {
+            "name": name,
+            "email": email,
+            "password": password,
+            "is_host": is_host
+        }
         user_id = post_user(pool, user_args, app.logger)
 
         if not user_id:
-            return render_template("signup.html", message={"error": "Email already exists, try another one."})
+            message = {
+                "authenticated": session.get("authenticated"),
+                "user_id": session.get('user_id'),
+                "host_id": session.get("host_id"),
+                "error": "Email already exists, try another one."
+            }
+            return render_template("signup.html", message=message)
 
         host_id = None
         if is_host:
@@ -319,19 +443,3 @@ def signup_handler():
             return redirect(f"/hosts/{host_id}/profile")
 
         return redirect("/")
-
-
-def get_user_from_session(session: SessionMixin):
-    if session.get('authenticated') is True:
-        return session.get('user_id')
-    else:
-        return None
-
-# @app.route('/host', methods=['POST'])
-# def host_post_handler():
-#     args_dic = request.json
-#     result = post_host(pool, args_dic, app.logger)
-#     if (result == None):
-#         abort(400, 'Missing param')
-#     else:
-#         return render_template('index.html', message=result)

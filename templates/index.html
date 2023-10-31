@@ -8,7 +8,7 @@
       <div class="justify-content-between my-2">
         <select name="city"class="form-select form-select-lg" aria-label="Default select example">
           <option value="" selected disabled>Select your destination</option>
-          {% for city in cities %}
+          {% for city in message.get("cities") %}
             <option "value="{{city}}">{{city}}</option>
           {% endfor %}
         </select>
@@ -72,11 +72,11 @@
       <button type="submit"class="btn btn-primary">Set Filters</button>
 
     </form>
-      {% if selected_city %}
-        <h5 class="text-muted pb-4 pt-2">Showing results in {{selected_city}}</h5>
+      {% if message.get("selected_city") %}
+        <h5 class="text-muted pb-4 pt-2">Showing results in {{message.selected_city}}</h5>
       {% endif %}
     <div class="row mt-4">
-      {% for listing in listings%}
+      {% for listing in message.get("listings")%}
         <div class="col-md-4">
           <div class="card mb-4 shadow-sm" style="height: 30rem;">
             <img

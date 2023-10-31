@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>User Profile | {{ message.get("user").get("name") }}</title>
+<title>User | {{ message.get("user").get("name") }}</title>
 <link href={{ url_for('static', filename='css/user_profile.css' )}} rel="stylesheet">
 {% endblock %}
 
@@ -10,21 +10,21 @@
     <div class="row">
         <div class="col-md-3 border-right">
             <div class="d-flex flex-column align-items-center text-center p-3 py-5">
-            {%if not message.get("user").get("picture_url")%}
+            {%if not message.user.get("picture_url")%}
                 {% set picture_url =
                 "https://st3.depositphotos.com/15648834/17930/v/600/depositphotos_179308454-stock-illustration-unknown-person-silhouette-glasses-profile.jpg" %}
             {% else %}
-            {% set picture_url = message.get("user").get("picture_url")%}
+            {% set picture_url = message.user.picture_url %}
             {% endif %}
             <img class="rounded-circle mt-5"
                     width="150px"
                     src={{ picture_url }}>
-                    <span class="font-weight-bold">{{ message.get("user").get("name") }}</span>
-                    <span class="text-black-50">{{ message.user.email }}</span>
+                    <span class="font-weight-bold">{{ message.user.get("name") }}</span>
+                    <span class="text-black-50">{{ message.user.get("email") }}</span>
                     <span></span>
             </div>
         </div>
-        {% set update_link = "/users/" + message.user.id|string + "/profile"%}
+        {% set update_link = "/users/" + message.user_id|string + "/profile"%}
 
         <div class="col-md-5 border-right">
         <form action={{ update_link }} method="POST" enctype="multipart/form-data">
@@ -41,12 +41,12 @@
                 <div class="row mt-2">
                     <div class="col-md-12">
                         <label class="labels">Name</label>
-                        <input type="text" name="new_name" id="new_name" class="form-control" placeholder={{ message.user.name }} value={{ message.user.name }}>
+                        <input required type="text" name="new_name" id="new_name" class="form-control" placeholder={{ message.user.name }} value={{ message.user.name }}>
                     </div>
                 </div>
                 <div class="row mt-2">
                     <div class="col-md-12"><label class="labels">Email</label>
-                        <input name="new_email" id="new_email" type="email" class="form-control" placeholder={{ message.user.email }} value={{ message.user.email }}>
+                        <input required name="new_email" id="new_email" type="email" class="form-control" placeholder={{ message.user.email }} value={{ message.user.email }}>
                     </div>
                 </div>
                 <div class="row mt-2">
@@ -86,10 +86,14 @@
                 <h4 class="text-right">Bookings</h4>
             </div>
             <div class="col-md-12">
+            {% if message.get("bookings") and len(message.bookings) > 0 %}
             {% for booking in message.bookings%}
             <h6 class="text-right">Bookings</h6>
             <br>
             {% endfor %}
+            {% else %}
+                <h5>No bookings yet!</h5>
+            {% endif %}
             </div>
         </div>
     </div>

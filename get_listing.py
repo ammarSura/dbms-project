@@ -27,7 +27,7 @@ def get_listing(pool: Connection, args_dic: dict) -> int or None:
         sql.Identifier('listings', 'neighbourhood'),
         sql.Identifier('listings', 'neighbourhood_overview'),
         sql.Identifier('listings', 'location'),
-        sql.Identifier('listings', 'coord'),
+        sql.Identifier('listings', 'description'),
         sql.Identifier('listings', 'property_type'),
         sql.Identifier('listings', 'accommodates'),
         sql.Identifier('listings', 'bathrooms'),
