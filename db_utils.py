@@ -85,16 +85,15 @@ def select_query(cur: Cursor, fields: list[sql.Identifier], table_name: str, arg
     extra_query and 'args_dic' in extra_query and args_dic.update(
         extra_query['args_dic'])
     query = sql.Composed(query_lst)
-
-    cur1 = ClientCursor(create_pool().getconn())
     try:
         cur.execute(
             query,
             args_dic
         )
-    except:
-        print('mogu', cur1.mogrify(query, args_dic))
 
+    except:
+        cur1 = ClientCursor(cur.connection)
+        print('query failed', cur1.mogrify(query, args_dic))
     result = None
     if (count):
         result = cur.fetchall()
