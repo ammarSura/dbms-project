@@ -401,6 +401,22 @@ def host_profile(id):
         else:
             template = "host_edit_profile.html"
 
+        query_lst = [
+            sql.SQL('\nLEFT JOIN listings ON listings.id = bookings.listing_id'),
+        ]
+        bookings = get_bookings(pool, {
+            'host_id': session.get("host_id"),
+            'count': 100,
+            'extra_query': {
+                'query_lst': query_lst,
+            },
+            'extra_fields': [
+                sql.Identifier('listings', 'name'),
+            ]
+
+        })
+        message["bookings"] = bookings
+        print('qwe', bookings)
         return render_template(template, message=message)
 
     if request.method == "POST":
@@ -428,14 +444,14 @@ def host_profile(id):
 ######## BOOKINGS ########
 @app.route("/booking/<id>", methods=["PATCH"])
 def booking_patch_handler(id):
-    status = request.form.get("status")
+    status = request.get_json().get("status")
     if(status not in ["rejected", "approved", "pending"]):
         abort(400, "Invalid status")
     update_booking(pool, {
         'status': status
     }, id)
 
-    return redirect("/hosts/" + str(session.get("host_id")) + "/profile")
+    return "/hosts/" + str(session.get("host_id")) + "/profile"
 
 ######## AUTHENTICATION ########
 @app.route('/signin', methods=['GET', 'POST'])
