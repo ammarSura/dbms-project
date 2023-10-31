@@ -18,6 +18,9 @@ def get_best_listing(pool: Connection, args_dic: dict) -> int or None:
     count = None
     extra_query = None
     order_by = None
+    if('extra_query' in args_dic):
+        extra_query = args_dic['extra_query']
+        del args_dic['extra_query']
     if('count' in args_dic):
         count = args_dic['count']
         del args_dic['count']
@@ -25,10 +28,12 @@ def get_best_listing(pool: Connection, args_dic: dict) -> int or None:
         is_budget = args_dic['is_budget']
         del args_dic['is_budget']
         if(is_budget):
+            if(extra_query is not None):
+                Exception('Not implemented')
             extra_query = {
                 'query_lst': [
                     sql.SQL('\nWHERE best_listings.price < 100'),
                 ]
             }
             order_by = 'price'
-    return run_query(pool, lambda cur: select_query(cur, fields, 'best_listings', args_dic, extra_query, count, None, order_by))
+    return run_query(pool, lambda cur: select_query(cur, fields, 'best_listings', args_dic, extra_query or None, count, None, order_by))
