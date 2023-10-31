@@ -96,6 +96,7 @@
                         <th scope="col">Check In</th>
                         <th scope="col">Check Out</th>
                         <th scope="col">Listing</th>
+                        <th scope="col">Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -105,6 +106,7 @@
                         <td>{{booking.get("start_date")}}</td>
                         <td>{{booking.get("end_date")}}</td>
                         <td><a href="/listings/{{booking.get('listing_id')}}">{% set name = booking.get("listing_name").split("·")[0] %}{{name}}</a></td>
+                        <td>{{ booking.get("status" )}}</td>
                     </tr>
             {% endfor %}
                 </tbody>
