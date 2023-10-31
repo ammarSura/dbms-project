@@ -249,8 +249,7 @@ def login_handler():
         args = {"email": email, "password": password}
         fields = [sql.Identifier("users", "id"),
                   sql.Identifier("users", "is_host")]
-        user = run_query(pool, lambda cur: select_query(
-            cur, fields, 'users', args))
+        user = get_user(pool, args, fields)
 
         if user.get("id"):
             session['authenticated'] = True
