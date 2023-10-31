@@ -141,18 +141,23 @@ create_index_lst = [
 create_materialized_view_lst = [
     """
         CREATE MATERIALIZED VIEW IF NOT EXISTS best_listings AS
-        SELECT listings.id, listings."name", listings.room_type, listings.property_type, listings.description, listings.accommodates, listings.picture_url, price, listings.neighbourhood, listings.rating, reviews."comments", reviews.reviewer_id, min(reviews.created_at) as latest_review FROM listings
-        LEFT JOIN reviews ON listings.id = reviews.listing_id
+        SELECT l1.id, l1."name", l1.room_type, l1.property_type, l1.description, l1.accommodates, l1.picture_url, l1.price, l1.neighbourhood, l1.rating, reviews."comments", reviews.reviewer_id, u."name" reviewer_name, reviews.created_at as latest_review FROM listings l1
+        INNER JOIN (
+            SELECT l.id, AVG(l.rating) average_rating FROM listings l
+            where l.rating is not null
+            group by l.id
+            order by AVG(l.rating) DESC
+            limit 200
+        ) l2 on l1.id = l2.id
+        LEFT JOIN reviews ON l1.id = reviews.listing_id
         LEFT JOIN users u on u.id = reviews.reviewer_id
-        WHERE listings.rating IS NOT NULL
-        GROUP BY listings.id, reviews.reviewer_id, reviews."comments"
-        ORDER BY rating DESC
-        LIMIT 200;
+        WHERE reviews.created_at = (select max(r.created_at) FROM reviews r WHERE r.listing_id = l1.id)
+        ORDER BY l2.average_rating desc
     """,
     """
         CREATE MATERIALIZED VIEW IF NOT EXISTS best_hosts AS
             SELECT top_hosts.*, top_listings.top_listings_id, top_listings.max_rating FROM (
-                SELECT h.id, h.neighbourhood, AVG(l.rating) avg_rating, h.host_since, u."name", u.picture_url FROM "hosts" h
+                SELECT h.id, AVG(l.rating) avg_rating, u."name", u.picture_url FROM "hosts" h
                 LEFT JOIN listings l on l.host_id = h.id
                 LEFT JOIN users u on u.id = h.user_id
                 WHERE h.is_superhost = true

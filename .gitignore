@@ -142,3 +142,7 @@ Temporary Items
 # Ignore all local history of files
 .history
 .ionide
+processed_timing.csv
+processed_timings.csv
+test.txt
+env.py
