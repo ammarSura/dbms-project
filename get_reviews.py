@@ -21,4 +21,9 @@ def get_reviews(pool, args_dic):
     if('count' in args_dic):
         count = args_dic['count']
         del args_dic['count']
+
+    if('id' in args_dic):
+        id = args_dic['id']
+        del args_dic['id']
+        args_dic['reviews.id'] = id
     return run_query(pool, lambda cur: select_query(cur, fields, 'reviews', args_dic, extra_query, count, None, 'created_at'))
