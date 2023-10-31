@@ -54,12 +54,12 @@
     </div>
     <div class="row row-cols-1 row-cols-md-3 g-4">
     {% for i in range(10) %}
-    {%if not message.get("review_users")[i].get("picture_url")%}
+    {%if not message.get("reviews")[i].get("picture_url")%}
     {% set picture_url =
     "https://st3.depositphotos.com/15648834/17930/v/600/depositphotos_179308454-stock-illustration-unknown-person-silhouette-glasses-profile.jpg"
     %}
     {% else %}
-    {% set picture_url = message.review_user.picture_url %}
+    {% set picture_url = message.reviews[i].picture_url %}
     {% endif %}
         <div class="col">
         <div class="card h-100 align-center">
@@ -67,7 +67,7 @@
                 data-field="src[Image Path]; title[Image Title]; alt[Image Alternate Text]"></a>
             <div class="card-body">
             <p class="fs-110 font-cond-l" contenteditable="false">"{{message.get('reviews')[i].get('comments') | safe}}"</p>
-            <h5 class="font-cond mgb-5 fg-text-d fs-130" contenteditable="false">{{message.review_users[i].get('name')}}</h5>
+            <h5 class="font-cond mgb-5 fg-text-d fs-130" contenteditable="false">{{message.reviews[i].get('name')}}</h5>
             <small class="font-cond case-u lts-sm fs-80 fg-text-l" contenteditable="false">Rating: <span class="fa fa-star checked"></span> {{message.reviews[i].get('rating')}}</small>
         </div>
         </div>

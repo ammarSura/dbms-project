@@ -1,5 +1,6 @@
 
 import os
+import re
 from hashlib import md5
 
 from flask import (Flask, abort, redirect, render_template, request, session,
@@ -16,11 +17,20 @@ from get_listing import get_listing
 from get_neighbourhoods import get_neighbourhoods
 from get_reviews import get_reviews
 from get_user import get_user
+from post_booking import post_booking
 from post_host import post_host
 from post_user import post_user
 from update_host import update_host
 from update_user import update_user
-from post_booking import post_booking
+
+# as per recommendation from @freylis, compile once only
+CLEANR = re.compile('<.*?>')
+
+
+def cleanhtml(raw_html):
+    cleantext = re.sub(CLEANR, '', raw_html)
+    return cleantext
+
 
 pool = create_pool()
 
@@ -118,30 +128,46 @@ def get_listings():
 
 @app.route('/listings/<id>', methods=['GET', "POST"])
 def listing_get_handler(id):
-    if request.method == "GET":
-        listing = get_listing(pool, {'id': id})
-        if not listing:
-            abort(404, 'Listing not found')
+    query_lst = [
+        sql.SQL('\nLEFT JOIN hosts ON hosts.id = listings.host_id'),
+        sql.SQL('\nLEFT JOIN users ON users.id = hosts.user_id'),
+    ]
 
-        host = get_host(pool, {"id": listing.get("host_id")})
-        host_user = get_user(pool, {"id": host.get("user_id")})
-        reviews = get_reviews(pool, {'listing_id': id, 'count': 10})
-        review_users = []
-        for review in reviews:
-            review_user = get_user(pool, {'id': review.get('reviewer_id')})
-            review_users.append(review_user)
+    listing = get_listing(pool, {
+        'id': id,
+        'extra_fields': [
+            sql.Identifier('hosts', 'location') + sql.SQL(' AS host_location'),
+            sql.Identifier('hosts', 'neighbourhood') +
+            sql.SQL(' AS host_neighbourhood'),
+            sql.Identifier('hosts', 'is_superhost') +
+            sql.SQL(' AS host_is_superhost'),
+            sql.Identifier('users', 'name') + sql.SQL(' AS host_name'),
+            sql.Identifier('users', 'picture_url') +
+            sql.SQL(' AS host_picture_url'),
+        ],
+        'extra_query': {
+            'query_lst': query_lst,
 
-        message = {
-            "authenticated": session.get("authenticated"),
-            "user_id": session.get('user_id'),
-            "host_id": session.get("host_id"),
-            "listing": listing,
-            "host": host,
-            "host_user": host_user,
-            "reviews": reviews,
-            "review_users": review_users
         }
-        return render_template('listingDetail.html', message=message)
+    })
+    if not listing:
+        abort(404, 'Listing not found')
+
+    host_user = {
+        'name': listing['host_name'],
+        'id': listing['host_id']
+    }
+    reviews = get_reviews(pool, {'listing_id': id, 'count': 10})
+
+    message = {
+        "authenticated": session.get("authenticated"),
+        "user_id": session.get('user_id'),
+        "host_id": session.get("host_id"),
+        "listing": listing,
+        "host_user": host_user,
+        "reviews": reviews,
+    }
+    return render_template('listingDetail.html', message=message)
 
     if request.method == "POST":  # add listing
         pass
@@ -466,3 +492,46 @@ def signup_handler():
             return redirect(f"/hosts/{host_id}/profile")
 
         return redirect("/")
+
+# Analytics
+
+
+@app.route('/best-listings', methods=['GET'])
+def best_listings_handler():
+    message = {
+        "authenticated": session.get("authenticated"),
+        "user_id": session.get('user_id'),
+        "host_id": session.get("host_id"),
+        "error": "Email already exists, try another one."
+    }
+    is_budget = request.args.get(
+        'budget') if request.args.get('budget') else False
+    args_dic = {
+        'count': 10,
+    }
+    if (is_budget):
+        args_dic['is_budget'] = True
+    listings = get_best_listing(pool, args_dic)
+    listings_with_stars = []
+    for listing in listings:
+        listing['stars'] = "⭐"*int(listing['rating']
+                                   ) if listing['rating'] else "No reviews"
+        listing['comments'] = cleanhtml(listing['comments'])
+        listings_with_stars.append(listing)
+
+    return render_template('best-listings.html', listings=listings_with_stars, message=message, is_budget=is_budget)
+
+
+@app.route('/best-hosts', methods=['GET'])
+def best_hosts_handler():
+    message = {
+        "authenticated": session.get("authenticated"),
+        "user_id": session.get('user_id'),
+        "host_id": session.get("host_id"),
+        "error": "Email already exists, try another one."
+    }
+    args_dic = {
+        'count': 10,
+    }
+    hosts = get_best_hosts(pool, args_dic)
+    return render_template('best-hosts.html', hosts=hosts, message=message)

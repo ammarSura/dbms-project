@@ -9,11 +9,13 @@
 <ol class="list-group list-group-flush list-group-numbered">
     {% for host in hosts %}
         <li class="list-group-item">
-            <div>
+            <div style="width: 20rem; height: 20rem;">
                 <img
                 src="{{host.picture_url}}"
                 class="card-img-top"
                 alt="host image"
+                height="100%"
+                width="auto"
                 />
             </div>
             <div
