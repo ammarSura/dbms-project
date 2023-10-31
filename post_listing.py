@@ -25,7 +25,6 @@ def post_listing(pool: Connection, args_dic: dict, logger: Logger) -> int or Non
     params = [
         'name',
         'picture_url',
-        'coord',
         'price',
         'property_type',
         'room_type',
