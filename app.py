@@ -21,6 +21,14 @@ from update_user import update_user
 from get_booking import get_bookings
 from get_reviews import get_reviews
 
+import re
+# as per recommendation from @freylis, compile once only
+CLEANR = re.compile('<.*?>')
+
+def cleanhtml(raw_html):
+  cleantext = re.sub(CLEANR, '', raw_html)
+  return cleantext
+
 pool = create_pool()
 
 app = Flask(__name__)
@@ -460,3 +468,42 @@ def signup_handler():
             return redirect(f"/hosts/{host_id}/profile")
 
         return redirect("/")
+
+#Analytics
+@app.route('/best-listings', methods=['GET'])
+def best_listings_handler():
+    message = {
+        "authenticated": session.get("authenticated"),
+        "user_id": session.get('user_id'),
+        "host_id": session.get("host_id"),
+        "error": "Email already exists, try another one."
+    }
+    is_budget = request.args.get('budget') if request.args.get('budget') else False
+    args_dic = {
+        'count': 10,
+    }
+    if(is_budget):
+        args_dic['is_budget'] = True
+    listings = get_best_listing(pool, args_dic)
+    listings_with_stars = []
+    for listing in listings:
+        listing['stars'] = "⭐"*int(listing['rating']
+                                   ) if listing['rating'] else "No reviews"
+        listing['comments'] = cleanhtml(listing['comments'])
+        listings_with_stars.append(listing)
+
+    return render_template('best-listings.html', listings=listings_with_stars, message=message, is_budget=is_budget)
+
+@app.route('/best-hosts', methods=['GET'])
+def best_hosts_handler():
+    message = {
+        "authenticated": session.get("authenticated"),
+        "user_id": session.get('user_id'),
+        "host_id": session.get("host_id"),
+        "error": "Email already exists, try another one."
+    }
+    args_dic = {
+        'count': 10,
+    }
+    hosts = get_best_hosts(pool, args_dic)
+    return render_template('best-hosts.html', hosts=hosts, message=message)
