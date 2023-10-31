@@ -138,6 +138,10 @@ create_table_lst = [
     """,
     """
         ALTER TABLE bookings ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'pending';
+    """,
+    """
+        ALTER TABLE users
+        ALTER COLUMN NAME SET NOT NULL;
     """
 
 ]
