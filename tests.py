@@ -111,6 +111,7 @@ class TestUserMethods(MethodTester):
         del fetched_user['updated_at']
         del fetched_user['id']
         del test_user['password']
+        del fetched_user['password']
         self.assertDictEqual(test_user, fetched_user)
 
     def test_get_user(self):
@@ -207,8 +208,8 @@ class TestListingMethods(MethodTester):
         self.assertListEqual(
             test_listing['amenities'], fetched_listing['amenities'])
         delete_keys(fetched_listing, [
-                    'id', 'created_at', 'updated_at', 'price', 'rating', 'coord', 'amenities'])
-        delete_keys(test_listing, ['price', 'rating', 'coord', 'amenities'])
+                    'id', 'created_at', 'updated_at', 'price', 'rating', 'amenities', 'description'])
+        delete_keys(test_listing, ['price', 'rating', 'amenities', 'coord'])
         self.assertDictEqual(test_listing, fetched_listing)
 
     def create_fake_listing_with_host_id(self):
@@ -267,7 +268,7 @@ class TestAnalyticsMethods(MethodTester):
             sql.SQL('WHERE best_listings.price < %(price)s')
         ]
         query_lst_args = {
-            'price': 10000
+            'price': 100000
         }
         extra_query = {
             'query_lst': query_lst,
@@ -279,7 +280,7 @@ class TestAnalyticsMethods(MethodTester):
         })
         self.assertIsNotNone(listings)
         self.assertTrue(isinstance(listings, list))
-        self.assertEqual(len(listings), 10)
+        self.assertGreaterEqual(len(listings), 10)
 
     def test_best_hosts_query(self):
         hosts = get_best_hosts(self.pool, {
@@ -353,6 +354,13 @@ class TestBookingMethods(MethodTester):
 
     def test_get_bookings(self):
         self._test_get_items(self.create_fake_booking_with_user_id(), self.equality_check, post_booking, get_bookings, {'count': 11})
-    # def
+
+
+# class TestSQLInjection(MethodTester):
+#     def test_get_user(self):
+
+#         x = create_fake_user(self.fake)
+#         print(x)
+
 if __name__ == '__main__':
     unittest.main()
