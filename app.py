@@ -1,5 +1,6 @@
 
 import os
+import re
 from hashlib import md5
 
 from flask import (Flask, abort, redirect, render_template, request, session,
@@ -10,24 +11,26 @@ from werkzeug.utils import secure_filename
 from db_utils import create_pool, query_append_check, run_query, select_query
 from get_best_hosts import get_best_hosts
 from get_best_listings import get_best_listing
+from get_booking import get_bookings
 from get_host import get_host
 from get_listing import get_listing
 from get_neighbourhoods import get_neighbourhoods
+from get_reviews import get_reviews
 from get_user import get_user
+from post_booking import post_booking
 from post_host import post_host
 from post_user import post_user
 from update_host import update_host
 from update_user import update_user
-from get_booking import get_bookings
-from get_reviews import get_reviews
 
-import re
 # as per recommendation from @freylis, compile once only
 CLEANR = re.compile('<.*?>')
 
+
 def cleanhtml(raw_html):
-  cleantext = re.sub(CLEANR, '', raw_html)
-  return cleantext
+    cleantext = re.sub(CLEANR, '', raw_html)
+    return cleantext
+
 
 pool = create_pool()
 
@@ -123,7 +126,7 @@ def get_listings():
     return render_template('index.html', message=message)
 
 
-@app.route('/listings/<id>', methods=['GET'])
+@app.route('/listings/<id>', methods=['GET', "POST"])
 def listing_get_handler(id):
     query_lst = [
         sql.SQL('\nLEFT JOIN hosts ON hosts.id = listings.host_id'),
@@ -134,10 +137,13 @@ def listing_get_handler(id):
         'id': id,
         'extra_fields': [
             sql.Identifier('hosts', 'location') + sql.SQL(' AS host_location'),
-            sql.Identifier('hosts', 'neighbourhood') + sql.SQL(' AS host_neighbourhood'),
-            sql.Identifier('hosts', 'is_superhost') + sql.SQL(' AS host_is_superhost'),
+            sql.Identifier('hosts', 'neighbourhood') +
+            sql.SQL(' AS host_neighbourhood'),
+            sql.Identifier('hosts', 'is_superhost') +
+            sql.SQL(' AS host_is_superhost'),
             sql.Identifier('users', 'name') + sql.SQL(' AS host_name'),
-            sql.Identifier('users', 'picture_url') + sql.SQL(' AS host_picture_url'),
+            sql.Identifier('users', 'picture_url') +
+            sql.SQL(' AS host_picture_url'),
         ],
         'extra_query': {
             'query_lst': query_lst,
@@ -162,6 +168,24 @@ def listing_get_handler(id):
         "reviews": reviews,
     }
     return render_template('listingDetail.html', message=message)
+
+    if request.method == "POST":  # add listing
+        pass
+
+
+@app.route("/listings/<id>/book", methods=["POST"])
+def book_listing(id):
+    args = {
+        "listing_id": id,
+        "num_guests": request.form.get("guests"),
+        "start_date": request.form.get("checkin"),
+        "end_date": request.form.get("checkout"),
+        "cost": request.form.get("cost"),
+        "booker_id": session.get("user_id")
+    }
+    bid = post_booking(pool, args, app.logger)
+
+    return redirect(f"/users/{session.get('user_id')}/profile")
 
 
 ######## USERS ########
@@ -469,7 +493,9 @@ def signup_handler():
 
         return redirect("/")
 
-#Analytics
+# Analytics
+
+
 @app.route('/best-listings', methods=['GET'])
 def best_listings_handler():
     message = {
@@ -478,11 +504,12 @@ def best_listings_handler():
         "host_id": session.get("host_id"),
         "error": "Email already exists, try another one."
     }
-    is_budget = request.args.get('budget') if request.args.get('budget') else False
+    is_budget = request.args.get(
+        'budget') if request.args.get('budget') else False
     args_dic = {
         'count': 10,
     }
-    if(is_budget):
+    if (is_budget):
         args_dic['is_budget'] = True
     listings = get_best_listing(pool, args_dic)
     listings_with_stars = []
@@ -493,6 +520,7 @@ def best_listings_handler():
         listings_with_stars.append(listing)
 
     return render_template('best-listings.html', listings=listings_with_stars, message=message, is_budget=is_budget)
+
 
 @app.route('/best-hosts', methods=['GET'])
 def best_hosts_handler():
