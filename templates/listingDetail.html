@@ -6,10 +6,17 @@
 <link rel="stylesheet" href="{{url_for('static', filename='css/reviews.css')}}">
 {% endblock head %}
 {% block content %}
-<div>
-<h1 class="display-3">{{ listing_name }}</h1>
-<h4><span class="fa fa-star checked"></span>{{message.listing.get("rating")}} | Hosted by <a href="/hosts/{{message.get('host_user').get('id') | string}}/profile">{{message.get("host_user").get("name")}}</a></h4>
 <div class="container">
+{% if message.get("error") %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ message.error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+<h1 class="display-3">{{ listing_name }}</h1>
+<h4><span class="fa fa-star checked"></span>{{message.listing.get("rating")}} | Hosted by <a
+        href="/hosts/{{message.get('host_user').get('id') | string}}/profile">{{message.get("host_user").get("name")}}</a>
+</h4>
 <div class="row">
 {% if message.get("authenticated") %}
 {% set class = "col-8" %}
@@ -43,7 +50,7 @@
             <dd class="col-sm-9">{{message.listing.get("beds")}}</dd>
 
             <dt class="col-sm-3">Amenities</dt>
-            <dd class="col-sm-9">{% for amenity in message.listing.get("amenities") %}{{amenity}}, {% endfor %}</dd>
+            <dd class="col-sm-9">{% for amenity in message.listing.get("amenities") %}{{amenity}}{% if not loop.last %}, {% endif %}{% endfor %}</dd>
         </dl>
     </div>
 </div>
@@ -53,22 +60,22 @@
         </h1>
     </div>
     <div class="row row-cols-1 row-cols-md-3 g-4">
-    {% for i in range(10) %}
-    {%if not message.get("reviews")[i].get("picture_url")%}
+    {% for review in message.get("reviews") %}
+    {%if not review.get("picture_url")%}
     {% set picture_url =
     "https://st3.depositphotos.com/15648834/17930/v/600/depositphotos_179308454-stock-illustration-unknown-person-silhouette-glasses-profile.jpg"
     %}
     {% else %}
-    {% set picture_url = message.reviews[i].picture_url %}
+    {% set picture_url = review.picture_url %}
     {% endif %}
         <div class="col">
         <div class="card h-100 align-center">
             <a href="#"><img src="{{picture_url}}" class="wpx-100 img-round mgb-20" data-edit="false" data-editor="field"
                 data-field="src[Image Path]; title[Image Title]; alt[Image Alternate Text]"></a>
             <div class="card-body">
-            <p class="fs-110 font-cond-l" contenteditable="false">"{{message.get('reviews')[i].get('comments') | safe}}"</p>
-            <h5 class="font-cond mgb-5 fg-text-d fs-130" contenteditable="false">{{message.reviews[i].get('name')}}</h5>
-            <small class="font-cond case-u lts-sm fs-80 fg-text-l" contenteditable="false">Rating: <span class="fa fa-star checked"></span> {{message.reviews[i].get('rating')}}</small>
+            <p class="fs-110 font-cond-l" contenteditable="false">"{{review.get('comments') | safe}}"</p>
+            <h5 class="font-cond mgb-5 fg-text-d fs-130" contenteditable="false">{{review.get('name')}}</h5>
+            <small class="font-cond case-u lts-sm fs-80 fg-text-l" contenteditable="false">Rating: <span class="fa fa-star checked"></span> {{review.get('rating')}}</small>
         </div>
         </div>
         </div>
@@ -80,41 +87,84 @@
 <div class="col-4">
 <div class="card">
 <div class="card-body">
-<form action="/listings/{{message.listing.id | string}}/book" method="POST">
+<form action="/listings/{{message.listing.id | string}}" method="POST">
+        <input type="hidden" name="form_type" value="book">
     <h1 style="font-size: 2em; font-weight: bold; margin-bottom: 15px;">Book this listing now!</h1>
     <div class="input-group-prepend" style=" font-size: small;">
         <label>CHECK IN</label> &emsp; &emsp; &emsp; &emsp; &emsp; &emsp; &emsp; &emsp;
         <label>CHECK OUT</label><br>
     </div>
     <div class="input-group" style=" font-size: small;">
-        <input class="form-control" type="date" placeholder="dd-mm-yyyy" name="checkin" id="checkin" />
-        <input class="form-control" type="date" placeholder="dd-mm-yyyy" name="checkout" id="checkout"/>
+        <input required class="form-control" type="date" placeholder="dd-mm-yyyy" name="checkin" id="checkin" />
+        <input required class="form-control" type="date" placeholder="dd-mm-yyyy" name="checkout" id="checkout"/>
     </div>
     <br>
     <div class="form-group" style=" font-size: small;">
         <label>GUESTS</label><br>
-        <select class="form-control" name="guests" id="guests">
+        <select required class="form-control" name="guests" id="guests">
             {% for i in range(1, message.listing.get("accommodates") + 1) %}
             <option value="{{i}}">{{i}} guest{{'s' if i > 1}}</option>
             {% endfor %}
         </select><br>
     </div>
-    <div class="form-group">
-        <button type="submit" class="btn btn-success btn-lg">Book!</button>
+    <div class="container text-center">
+    <div class="form-group justify-content-around row">
+        <button type="submit" class="btn btn-success btn-lg col-6">Book!</button>
+        <button type="button" id="cost_btn" name="cost_btn" class="btn btn-secondary btn-lg col-6">Calculate Cost</button>
     </div>
-    {# input to show cost, must be disabled and update based on number of days selected #}
-
-
-    <input type="hidden" name="cost" id="cost" value={{message.listing.get('price')}}>
+    </div>
+    <input required type="number" name="cost" id="cost" hidden>
 </form>
 </div>
+</div>
+<div class="card mt-5">
+    <div class="card-body">
+        <form action="/listings/{{message.listing.id | string}}" method="POST">
+        <input type="hidden" name="form_type" value="review">
+            <h1 style="font-size: 2em; font-weight: bold; margin-bottom: 15px;">Leave a review!</h1>
+            <div class="input-group" style=" font-size: small;">
+                <textarea style="height: 150px;" required class="form-control" placeholder="Your review" name="comments" id="comments" ></textarea>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="star-rating">
+                            <span class="fa fa-star-o" data-rating="1"></span>
+                            <span class="fa fa-star-o" data-rating="2"></span>
+                            <span class="fa fa-star-o" data-rating="3"></span>
+                            <span class="fa fa-star-o" data-rating="4"></span>
+                            <span class="fa fa-star-o" data-rating="5"></span>
+                            <input required type="hidden" id="rating" name="rating" class="rating-value" value="1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container text-center mt-3">
+                <div class="form-group justify-content-around row">
+                    <button type="submit" class="btn btn-success btn-lg col-12">Post Review!</button>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 </div>
 {% endif %}
 </div>
 </div>
-</div>
-<script>
-{# update hidden field value #}
-</script>
 {% endblock content %}
+{% block scripts %}
+<script src="{{url_for('static', filename='js/rating.js')}}"></script>
+<script>
+    document.getElementById("cost_btn").addEventListener("click", function () {
+        var checkin = new Date(document.getElementById("checkin").value).getTime();
+        var checkout = new Date(document.getElementById("checkout").value).getTime();
+        var guests = document.getElementById("guests");
+        var btn = document.getElementById("cost_btn");
+        var cost = document.getElementById("cost");
+        var days = Math.floor((checkout - checkin) / 86400000);
+        cost.value = Math.abs(days * {{ message.listing.get("price") }} * guests.value);
+    cost_btn.innerHTML = `&#8377; ${cost.value}`;
+})
+</script>
+{% endblock scripts %}
