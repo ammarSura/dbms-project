@@ -356,11 +356,21 @@ class TestBookingMethods(MethodTester):
         self._test_get_items(self.create_fake_booking_with_user_id(), self.equality_check, post_booking, get_bookings, {'count': 11})
 
 
-# class TestSQLInjection(MethodTester):
-#     def test_get_user(self):
+class TestSQLInjection(MethodTester):
+    def _tester(self, name):
+        new_user = create_fake_user(self.fake)
+        new_user['name'] = name
+        id = post_user(self.pool, new_user, self.logger)
+        self.assertIsNotNone(id)
+    def test_get_user_sanity(self):
+        test_strings = [
+            "Ammar's test",
+            "Ammar's test'; DROP TABLE users;",
+            "Ammar's --;"
+        ]
+        for i in test_strings:
+            self._tester(i)
 
-#         x = create_fake_user(self.fake)
-#         print(x)
 
 if __name__ == '__main__':
     unittest.main()
