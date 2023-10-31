@@ -208,7 +208,7 @@ class TestListingMethods(MethodTester):
         self.assertListEqual(
             test_listing['amenities'], fetched_listing['amenities'])
         delete_keys(fetched_listing, [
-                    'id', 'created_at', 'updated_at', 'price', 'rating', 'amenities', 'description'])
+                    'id', 'created_at', 'updated_at', 'price', 'rating', 'amenities', 'description', 'min_nights', 'max_nights'])
         delete_keys(test_listing, ['price', 'rating', 'amenities', 'coord'])
         self.assertDictEqual(test_listing, fetched_listing)
 
@@ -219,23 +219,23 @@ class TestListingMethods(MethodTester):
 
         return lambda faker: create_fake_listing(faker, new_host_id)
 
-    def test_get_host(self):
+    def test_get_listings(self):
         self._test_get_item(self.create_fake_listing_with_host_id(
         ), self.listing_equality_check, post_listing, get_listing)
 
-    def test_get_host_missing_param(self):
+    def test_get_listings_missing_param(self):
         self._test_get_item_invalid_param(
             self.create_fake_listing_with_host_id(), post_listing, get_listing)
 
-    def test_post_host(self):
+    def test_post_listings(self):
         self._test_post_item(
             self.create_fake_listing_with_host_id(), post_listing, get_listing)
 
-    def test_post_host_missing_required_param(self):
+    def test_post_listings_missing_required_param(self):
         self._test_post_item_missing_required_param(
             'host_id', self.create_fake_listing_with_host_id(), post_listing)
 
-    def test_post_host_missing_param(self):
+    def test_post_listings_missing_param(self):
         self._test_post_item_missing_param(
             'bedrooms', self.create_fake_listing_with_host_id(), post_listing)
 
