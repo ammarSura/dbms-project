@@ -111,7 +111,32 @@ create_table_lst = [
     """,
     """
         ALTER TABLE bookings ADD COLUMN IF NOT EXISTS num_guests SMALLINT DEFAULT 1;
+    """,
     """
+        ALTER TABLE users
+        ALTER COLUMN created_at SET DEFAULT current_timestamp,
+        ALTER COLUMN updated_at SET DEFAULT current_timestamp;
+    """,
+    """
+        ALTER TABLE reviews
+        ALTER COLUMN created_at SET DEFAULT current_timestamp
+    """,
+     """
+        ALTER TABLE hosts
+        ALTER COLUMN host_since SET DEFAULT current_timestamp,
+        ALTER COLUMN updated_at SET DEFAULT current_timestamp;
+    """,
+     """
+        ALTER TABLE bookings
+        ALTER COLUMN created_at SET DEFAULT current_timestamp,
+        ALTER COLUMN updated_at SET DEFAULT current_timestamp;
+    """,
+     """
+        ALTER TABLE listings
+        ALTER COLUMN created_at SET DEFAULT current_timestamp,
+        ALTER COLUMN updated_at SET DEFAULT current_timestamp;
+    """,
+
 ]
 
 create_index_lst = [
@@ -183,7 +208,6 @@ for query in create_table_lst:
     except Exception as e:
         print(e)
         print(query)
-        break
 
 for query in create_index_lst:
     try:
