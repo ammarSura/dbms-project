@@ -164,7 +164,7 @@
         var cost = document.getElementById("cost");
         var days = Math.floor((checkout - checkin) / 86400000);
         cost.value = Math.abs(days * {{ message.listing.get("price") }} * guests.value);
-    cost_btn.innerHTML = `&#8377; ${cost.value}`;
+    cost_btn.innerHTML = `$ ${cost.value}`;
 })
 </script>
 {% endblock scripts %}
