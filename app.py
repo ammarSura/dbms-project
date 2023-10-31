@@ -20,10 +20,10 @@ from get_reviews import get_reviews
 from get_user import get_user
 from post_booking import post_booking
 from post_host import post_host
+from post_review import post_review
 from post_user import post_user
 from update_host import update_host
 from update_user import update_user
-from post_review import post_review
 
 # as per recommendation from @freylis, compile once only
 CLEANR = re.compile('<.*?>')
@@ -556,12 +556,6 @@ def signup_handler():
 ######## ANALYTICS ########
 @app.route('/best-listings', methods=['GET'])
 def best_listings_handler():
-    message = {
-        "authenticated": session.get("authenticated"),
-        "user_id": session.get('user_id'),
-        "host_id": session.get("host_id"),
-        "error": "Email already exists, try another one."
-    }
     is_budget = request.args.get(
         'budget') if request.args.get('budget') else False
     args_dic = {
@@ -577,19 +571,26 @@ def best_listings_handler():
         listing['comments'] = cleanhtml(listing['comments'])
         listings_with_stars.append(listing)
 
-    return render_template('best-listings.html', listings=listings_with_stars, message=message, is_budget=is_budget)
-
-
-@app.route('/best-hosts', methods=['GET'])
-def best_hosts_handler():
     message = {
         "authenticated": session.get("authenticated"),
         "user_id": session.get('user_id'),
         "host_id": session.get("host_id"),
-        "error": "Email already exists, try another one."
+        "listings": listings_with_stars,
+        "is_budget": is_budget
     }
+
+    return render_template('best-listings.html', message=message)
+
+
+@app.route('/best-hosts', methods=['GET'])
+def best_hosts_handler():
     args_dic = {
         'count': 10,
     }
-    hosts = get_best_hosts(pool, args_dic)
-    return render_template('best-hosts.html', hosts=hosts, message=message)
+    message = {
+        "authenticated": session.get("authenticated"),
+        "user_id": session.get('user_id'),
+        "host_id": session.get("host_id"),
+        "hosts": get_best_hosts(pool, args_dic)
+    }
+    return render_template('best-hosts.html', message=message)

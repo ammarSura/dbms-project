@@ -7,7 +7,7 @@
     Top 10 Hosts
 </h4>
 <ol class="list-group list-group-flush list-group-numbered">
-    {% for host in hosts %}
+    {% for host in message.get("hosts") %}
         <li class="list-group-item">
             <div style="width: 20rem; height: 20rem;">
                 <img
