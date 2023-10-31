@@ -4,7 +4,6 @@ from hashlib import md5
 
 from flask import (Flask, abort, redirect, render_template, request, session,
                    url_for)
-from flask.sessions import SessionMixin
 from psycopg import sql
 from werkzeug.utils import secure_filename
 
@@ -20,6 +19,7 @@ from post_user import post_user
 from update_host import update_host
 from update_user import update_user
 from get_booking import get_bookings
+from get_reviews import get_reviews
 
 pool = create_pool()
 
@@ -28,7 +28,7 @@ app.config.from_pyfile('env.py')
 app.secret_key = b'eeabb196a8b469e1ca9f6c9f0133312cc2169632bd0491ab96d47e0ecd165f99'
 
 
-### LISTINGS ###
+######## LISTINGS ########
 @app.route('/')
 def get_listings():
     args_dic = {
@@ -119,21 +119,27 @@ def get_listings():
 def listing_get_handler(id):
     listing = get_listing(pool, {'id': id})
     host = get_host(pool, {"id": listing.get("host_id")})
-    user = None
-    if session.get("user_id"):
-        user = get_user(pool, {"id": session.get("user_id")})
+    host_user = get_user(pool, {"id": host.get("user_id")})
+    reviews = get_reviews(pool, {'listing_id': id, 'count': 10})
+    review_users = []
+    for review in reviews:
+        review_user = get_user(pool, {'id': review.get('reviewer_id')})
+        review_users.append(review_user)
+
     message = {
         "authenticated": session.get("authenticated"),
         "user_id": session.get('user_id'),
         "host_id": session.get("host_id"),
         "listing": listing,
         "host": host,
-        "user": user
+        "host_user": host_user,
+        "reviews": reviews,
+        "review_users": review_users
     }
     return render_template('listingDetail.html', message=message)
 
 
-### USERS ###
+######## USERS ########
 @app.route('/users/<id>/profile', methods=['GET', "POST"])
 def get_user_profile_handler(id):
     if str(session.get("user_id")) != id:
@@ -265,7 +271,7 @@ def get_user_profile_handler(id):
             return redirect(f"/users/{user.get('id')}/profile")
 
 
-### HOSTS ###
+######## HOSTS ########
 @app.route("/hosts/<id>/profile", methods=["GET", "POST"])
 def host_profile(id):
     host = get_host(pool, {"id": id})
@@ -311,7 +317,7 @@ def host_profile(id):
         return redirect(f"/hosts/{host_id}/profile")
 
 
-### AUTHENTICATION ###
+######## AUTHENTICATION ########
 @app.route('/signin', methods=['GET', 'POST'])
 def login_handler():
     if request.method == 'GET':

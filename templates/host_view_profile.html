@@ -54,7 +54,7 @@
                     <div class="col-md-6">
                         <label class="labels">Location</label>
                         <input disabled type="text" name="location" id="location" class="form-control"
-                            placeholder='{{ message.get("host").get("neighbourhood") + ", " + message.host.get("location") }}' value='{{ message.host.neighbourhood + ", " + message.host.location }}'>
+                            placeholder='{{ message.get("host").get("neighbourhood") ~ ", " ~ message.host.get("location") }}' value='{{ message.host.neighbourhood ~ ", " ~ message.host.location }}'>
                     </div>
                     <div class="col-md-2">
                         <label class="labels">Host Since</label>

@@ -1,4 +1,71 @@
 {% extends "base.html" %}
+{% set listing_name = message.get("listing").get("name").split("·")[0] %}
 {% block head %}
-<title>{{ message.listing.name }}</title>
-{% endblock %}
+<title>{{ listing_name }}</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="{{url_for('static', filename='css/reviews.css')}}">
+{% endblock head %}
+{% block content %}
+<div>
+<h1 class="display-3">{{ listing_name }}</h1>
+<h4><span class="fa fa-star checked"></span>{{message.listing.get("rating")}} | Hosted by <a href="/hosts/{{message.get('host_user').get('id') | string}}/profile">{{message.get("host_user").get("name")}}</a></h4>
+<div class="card mb-3">
+    <img src="{{message.listing.get('picture_url')}}" class="card-img-top" height="50%">
+    <div class="card-body">
+        <h4 class="card-text">Description</h4>
+        <p class="card-text lead">{{message.listing.get('description')|safe}}</p>
+        <h4 class="card-text">Details</h4>
+        <dl class="row">
+            <dt class="col-sm-3">Property Type</dt>
+            <dd class="col-sm-9">{{message.listing.get("property_type")}}</dd>
+
+            <dt class="col-sm-3">Room Type</dt>
+            <dd class="col-sm-9">{{message.listing.get("room_type")}}</dd>
+
+            <dt class="col-sm-3">Accommodates</dt>
+            <dd class="col-sm-9">{{message.listing.get("accommodates")}}</dd>
+
+            <dt class="col-sm-3">Bathrooms</dt>
+            <dd class="col-sm-9">{{message.listing.get("bathrooms")}}</dd>
+
+            <dt class="col-sm-3">Bedrooms</dt>
+            <dd class="col-sm-9">{{message.listing.get("bedrooms")}}</dd>
+
+            <dt class="col-sm-3">Beds</dt>
+            <dd class="col-sm-9">{{message.listing.get("beds")}}</dd>
+
+            <dt class="col-sm-3">Amenities</dt>
+            <dd class="col-sm-9">{% for amenity in message.listing.get("amenities") %}{{amenity}}, {% endfor %}</dd>
+        </dl>
+    </div>
+</div>
+<div class="container">
+    <div class="mgb-40 padb-30 auto-invert line-b-4 align-center">
+        <h1 class="font-cond-b fg-text-d lts-md fs-300 fs-300-xs no-mg" contenteditable="false">Read Customer Reviews
+        </h1>
+    </div>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for i in range(10) %}
+    {%if not message.get("review_users")[i].get("picture_url")%}
+    {% set picture_url =
+    "https://st3.depositphotos.com/15648834/17930/v/600/depositphotos_179308454-stock-illustration-unknown-person-silhouette-glasses-profile.jpg"
+    %}
+    {% else %}
+    {% set picture_url = message.review_user.picture_url %}
+    {% endif %}
+        <div class="col">
+        <div class="card h-100 align-center">
+            <a href="#"><img src="{{picture_url}}" class="wpx-100 img-round mgb-20" data-edit="false" data-editor="field"
+                data-field="src[Image Path]; title[Image Title]; alt[Image Alternate Text]"></a>
+            <div class="card-body">
+            <p class="fs-110 font-cond-l" contenteditable="false">"{{message.get('reviews')[i].get('comments') | safe}}"</p>
+            <h5 class="font-cond mgb-5 fg-text-d fs-130" contenteditable="false">{{message.review_users[i].get('name')}}</h5>
+            <small class="font-cond case-u lts-sm fs-80 fg-text-l" contenteditable="false">Rating: <span class="fa fa-star checked"></span> {{message.reviews[i].get('rating')}}</small>
+        </div>
+        </div>
+        </div>
+    {% endfor %}
+    </div>
+</div>
+</div>
+{% endblock content %}

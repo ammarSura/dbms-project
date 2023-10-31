@@ -86,10 +86,14 @@
                 <h4 class="text-right">Bookings</h4>
             </div>
             <div class="col-md-12">
-            {% for booking in message.get("bookings")%}
+            {% if message.get("bookings") and len(message.bookings) > 0 %}
+            {% for booking in message.bookings%}
             <h6 class="text-right">Bookings</h6>
             <br>
             {% endfor %}
+            {% else %}
+                <h5>No bookings yet!</h5>
+            {% endif %}
             </div>
         </div>
     </div>
