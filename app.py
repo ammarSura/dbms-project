@@ -10,16 +10,17 @@ from werkzeug.utils import secure_filename
 from db_utils import create_pool, query_append_check, run_query, select_query
 from get_best_hosts import get_best_hosts
 from get_best_listings import get_best_listing
+from get_booking import get_bookings
 from get_host import get_host
 from get_listing import get_listing
 from get_neighbourhoods import get_neighbourhoods
+from get_reviews import get_reviews
 from get_user import get_user
 from post_host import post_host
 from post_user import post_user
 from update_host import update_host
 from update_user import update_user
-from get_booking import get_bookings
-from get_reviews import get_reviews
+from post_booking import post_booking
 
 pool = create_pool()
 
@@ -115,31 +116,50 @@ def get_listings():
     return render_template('index.html', message=message)
 
 
-@app.route('/listings/<id>', methods=['GET'])
+@app.route('/listings/<id>', methods=['GET', "POST"])
 def listing_get_handler(id):
-    listing = get_listing(pool, {'id': id})
-    if not listing:
-        abort(404, 'Listing not found')
+    if request.method == "GET":
+        listing = get_listing(pool, {'id': id})
+        if not listing:
+            abort(404, 'Listing not found')
 
-    host = get_host(pool, {"id": listing.get("host_id")})
-    host_user = get_user(pool, {"id": host.get("user_id")})
-    reviews = get_reviews(pool, {'listing_id': id, 'count': 10})
-    review_users = []
-    for review in reviews:
-        review_user = get_user(pool, {'id': review.get('reviewer_id')})
-        review_users.append(review_user)
+        host = get_host(pool, {"id": listing.get("host_id")})
+        host_user = get_user(pool, {"id": host.get("user_id")})
+        reviews = get_reviews(pool, {'listing_id': id, 'count': 10})
+        review_users = []
+        for review in reviews:
+            review_user = get_user(pool, {'id': review.get('reviewer_id')})
+            review_users.append(review_user)
 
-    message = {
-        "authenticated": session.get("authenticated"),
-        "user_id": session.get('user_id'),
-        "host_id": session.get("host_id"),
-        "listing": listing,
-        "host": host,
-        "host_user": host_user,
-        "reviews": reviews,
-        "review_users": review_users
+        message = {
+            "authenticated": session.get("authenticated"),
+            "user_id": session.get('user_id'),
+            "host_id": session.get("host_id"),
+            "listing": listing,
+            "host": host,
+            "host_user": host_user,
+            "reviews": reviews,
+            "review_users": review_users
+        }
+        return render_template('listingDetail.html', message=message)
+
+    if request.method == "POST":  # add listing
+        pass
+
+
+@app.route("/listings/<id>/book", methods=["POST"])
+def book_listing(id):
+    args = {
+        "listing_id": id,
+        "num_guests": request.form.get("guests"),
+        "start_date": request.form.get("checkin"),
+        "end_date": request.form.get("checkout"),
+        "cost": request.form.get("cost"),
+        "booker_id": session.get("user_id")
     }
-    return render_template('listingDetail.html', message=message)
+    bid = post_booking(pool, args, app.logger)
+
+    return redirect(f"/users/{session.get('user_id')}/profile")
 
 
 ######## USERS ########

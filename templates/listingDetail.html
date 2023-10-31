@@ -87,13 +87,13 @@
         <label>CHECK OUT</label><br>
     </div>
     <div class="input-group" style=" font-size: small;">
-        <input class="form-control" type="date" placeholder="dd-mm-yyyy" name="checkin" />
-        <input class="form-control" type="date" placeholder="dd-mm-yyyy" name="checkout" />
+        <input class="form-control" type="date" placeholder="dd-mm-yyyy" name="checkin" id="checkin" />
+        <input class="form-control" type="date" placeholder="dd-mm-yyyy" name="checkout" id="checkout"/>
     </div>
     <br>
     <div class="form-group" style=" font-size: small;">
         <label>GUESTS</label><br>
-        <select class="form-control">
+        <select class="form-control" name="guests" id="guests">
             {% for i in range(1, message.listing.get("accommodates") + 1) %}
             <option value="{{i}}">{{i}} guest{{'s' if i > 1}}</option>
             {% endfor %}
@@ -102,6 +102,10 @@
     <div class="form-group">
         <button type="submit" class="btn btn-success btn-lg">Book!</button>
     </div>
+    {# input to show cost, must be disabled and update based on number of days selected #}
+
+
+    <input type="hidden" name="cost" id="cost" value={{message.listing.get('price')}}>
 </form>
 </div>
 </div>
@@ -110,4 +114,7 @@
 </div>
 </div>
 </div>
+<script>
+{# update hidden field value #}
+</script>
 {% endblock content %}
