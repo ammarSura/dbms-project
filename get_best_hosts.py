@@ -8,7 +8,6 @@ def get_best_hosts(pool: Connection, args_dic: dict) -> int or None:
         sql.Identifier('best_hosts', 'picture_url'),
         sql.Identifier('best_hosts', 'name'),
         sql.Identifier('best_hosts', 'avg_rating'),
-        sql.Identifier('best_hosts', 'neighbourhood'),
         sql.Identifier('best_hosts', 'top_listings_id'),
         sql.Identifier('best_hosts', 'max_rating'),
     ]
