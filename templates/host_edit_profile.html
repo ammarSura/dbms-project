@@ -66,20 +66,99 @@
             </div>
         </form>
         </div>
+    <div class="p-3 py-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="text-right">Bookings</h4>
+        </div>
+        <div class="col-md-12">
+            {% if message.get("bookings") and message.bookings|length > 0 %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Booking ID</th>
+                        <th scope="col">Check In</th>
+                        <th scope="col">Check Out</th>
+                        <th scope="col">Listing</th>
+                        <th scope="col">Price</th>
+                        <th scop="col">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+            {% for booking in message.bookings%}
+                    <tr>
+                        <th scope="col">{{booking.get("id")}}</th>
+                        <td>{{booking.get("start_date")}}</td>
+                        <td>{{booking.get("end_date")}}</td>
+                        <td><a href="/listings/{{booking.get('listing_id')}}">{% set name = booking.get("name").split("·")[0] %}{{name}}</a></td>
+                        <td>
+                            ${{booking.get("cost")}}
+                        </td>
+                        <td>
+                            {% if booking.get("status") == "pending" %}
+                            {% set update_link = "/booking/" + booking.get("id")|string %}
+                                <button class="btn btn-success" type="button"  value="{{ booking.get("id") }}" data-bs-toggle="collapse" id="status-button-approved">
+                                    Approve Booking
+                                </button>
+
+                                <button class="btn btn-primary" type="button" value="{{ booking.get("id") }}" data-bs-toggle="collapse" id="status-button-rejected">
+                                    Reject Booking
+                                </button>
+                            {% else %}
+                            {{booking.get("status")}}
+                            {% endif %}
+                        </td>
+                    </tr>
+            {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <h5>No bookings yet!</h5>
+            {% endif %}
+        </div>
     </div>
+</div>
 </div>
 </div>
 </div>
 {% endblock %}
 {% block scripts %}
-<script>
-    window.addEventListener('load', () => {
-        const about = document.getElementById("about");
-        about.value = `{{ message.host.about }}`;
-        const location = document.getElementById("location");
-        location.value = `{{ message.host.location }}`;
-        const neighbourhood = document.getElementById("neighbourhood");
-        neighbourhood.value = `{{ message.host.neighbourhood }}`;
-    })
-</script>
-{% endblock script %}
+    <script>
+        window.addEventListener('load', () => {
+            const about = document.getElementById("about");
+            about.value = `{{ message.host.about }}`;
+            const location = document.getElementById("location");
+            location.value = `{{ message.host.location }}`;
+            const neighbourhood = document.getElementById("neighbourhood");
+            neighbourhood.value = `{{ message.host.neighbourhood }}`;
+        })
+        const confirmButton = document.getElementById("status-button-approved");
+        const rejectButton = document.getElementById("status-button-rejected");
+
+        confirmButton.addEventListener("click", function(e) {
+            const bookingId = e.target.value;
+            const x = fetch(`/booking/${bookingId}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                method: "PATCH",
+                body: JSON.stringify({
+                    status: "approved"
+                })
+            }).then(res => window.location.reload());
+        });
+        rejectButton.addEventListener("click", function(e) {
+            const bookingId = e.target.value;
+            fetch(`/booking/${bookingId}`, {
+                method: "PATCH",
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    status: "rejected"
+                })
+            }).then(res => window.location.reload());
+        });
+    </script>
+{% endblock scripts %}
