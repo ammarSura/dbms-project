@@ -1,6 +1,7 @@
 import sys
+import time
 from typing import Callable
-
+from statistics import mean
 from psycopg import ClientCursor, Cursor, sql
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
@@ -14,10 +15,15 @@ def set_missing_params_to_none(args_dic: dict, required_params: list):
             args_dic[param] = None
 
 
-def run_query(pool: ConnectionPool, query: Callable[[], Cursor]):
+def run_query(pool: ConnectionPool, query: Callable[[], Cursor], q_id: str = None):
     with pool.connection() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
-            return query(cur)
+            start_time = time.time()
+            res = query(cur)
+            end_time = time.time()
+            if q_id:
+                get_timings('{},{}'.format(q_id, (end_time - start_time) * 1000))
+            return res
 
 
 def create_pool():
@@ -29,7 +35,7 @@ def create_pool():
     return pool
 
 
-def select_query(cur: Cursor, fields: list[sql.Identifier], table_name: str, args_dic: dict, extra_query: dict = None, count: int = None, page: int = None) -> dict or None:
+def select_query(cur: Cursor, fields: list[sql.Identifier], table_name: str, args_dic: dict, extra_query: dict = None, count: int = None, page: int = None, order_by: str = None) -> dict or None:
     query_lst = [
         sql.SQL("SELECT {fields} FROM {table_name}")
         .format(
@@ -42,7 +48,8 @@ def select_query(cur: Cursor, fields: list[sql.Identifier], table_name: str, arg
         query_lst.extend(extra_query['query_lst'])
     for param, value in args_dic.items():
         if (value):
-            if (len(query_lst) == 1):
+            query_string = sql.Composed(query_lst).as_string(cur)
+            if (len(query_lst) == 1 or 'WHERE' not in query_string) :
                 query_lst.append(
                     sql.SQL(
                         "\nWHERE {pkey} = %({pkey})s".format(
@@ -56,6 +63,13 @@ def select_query(cur: Cursor, fields: list[sql.Identifier], table_name: str, arg
                             pkey=param,
                         ))
                 )
+
+    if(order_by):
+        query_lst.append(
+            sql.SQL("\nORDER BY {order_by}").format(
+                order_by=sql.Identifier(order_by)
+            )
+        )
     if (count):
         query_lst.append(
             sql.SQL("\nLIMIT %(count)s")
@@ -71,13 +85,15 @@ def select_query(cur: Cursor, fields: list[sql.Identifier], table_name: str, arg
     extra_query and 'args_dic' in extra_query and args_dic.update(
         extra_query['args_dic'])
     query = sql.Composed(query_lst)
-    cursor = ClientCursor(create_pool().getconn())
-    print('mogrify', cursor.mogrify(query, args_dic), file=sys.stdout)
 
-    cur.execute(
-        query,
-        args_dic
-    )
+    cur1 = ClientCursor(create_pool().getconn())
+    try:
+        cur.execute(
+            query,
+            args_dic
+        )
+    except:
+        print('mogu', cur1.mogrify(query, args_dic))
 
     result = None
     if (count):
@@ -123,8 +139,6 @@ def update_query(cur, args_dic, id, table_name):
         update_lst.append(sql.SQL('\nRETURNING id'))
         args_dic['id'] = id
         query =sql.Composed(update_lst)
-        cursor = ClientCursor(create_pool().getconn())
-        print('mogrify123', cursor.mogrify(query, args_dic), file=sys.stdout)
         cur.execute(
             query,
             args_dic
@@ -134,3 +148,37 @@ def update_query(cur, args_dic, id, table_name):
         return result['id']
     except Exception as e:
         return None
+
+def get_timings(id: str):
+    with open("test.txt", "a") as myfile:
+        myfile.write(id + '\n')
+
+def process_timings():
+    with open("test.txt", "r") as myfile:
+        data = myfile.readlines()
+        timings = {}
+        for datum in data:
+            datum = datum.strip()
+            datum = datum.split(',')
+            timing = float(datum[1])
+            id = datum[0]
+            if id not in timings:
+                timings[id] = []
+            timings[id].append(timing)
+    timing_lst = []
+    for id in timings:
+        timings[id].sort(reverse=True)
+        timing_lst.append({
+            'id': id,
+            'mean': mean(timings[id]),
+            'max': max(timings[id]),
+            'timings': timings[id]
+        })
+    timing_lst.sort(key=lambda x: x['mean'], reverse=True)
+    with open("processed_timings.txt", "w") as myfile:
+        myfile.write('id,mean,max,timings\n')
+        for timing in timing_lst:
+            myfile.write(timing['id'] + ',' + str(timing['mean']) + ',' + str(timing['max']) + ',' + str(timing['timings']) + '\n')
+
+if __name__ == "__main__":
+    process_timings()
