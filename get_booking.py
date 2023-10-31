@@ -41,6 +41,8 @@ def get_bookings(pool, args_dic):
         sql.Identifier('bookings', 'cost'),
         sql.Identifier('bookings', 'num_guests'),
         sql.Identifier('bookings', 'created_at'),
+        sql.Identifier('bookings', 'updated_at'),
+        sql.Identifier('bookings', 'status')
     ]
     fields.extend(extra_fields)
 
