@@ -7,6 +7,7 @@ def get_listing(pool: Connection, args_dic: dict) -> int or None:
     count = None
     extra_query = None
     page = None
+    extra_fields = []
     if ('count' in args_dic):
         count = args_dic['count']
         del args_dic['count']
@@ -16,6 +17,14 @@ def get_listing(pool: Connection, args_dic: dict) -> int or None:
     if ('extra_query' in args_dic):
         extra_query = args_dic['extra_query']
         del args_dic['extra_query']
+    if('extra_fields' in args_dic):
+        extra_fields = args_dic['extra_fields']
+        del args_dic['extra_fields']
+
+    if('id' in args_dic):
+        id = args_dic['id']
+        del args_dic['id']
+        args_dic['listings.id'] = id
     fields = [
         sql.Identifier('listings', 'id'),
         sql.Identifier('listings', 'picture_url'),
@@ -36,6 +45,7 @@ def get_listing(pool: Connection, args_dic: dict) -> int or None:
         sql.Identifier('listings', 'amenities'),
         sql.Identifier('listings', 'created_at'),
         sql.Identifier('listings', 'updated_at'),
-
     ]
+
+    fields.extend(extra_fields)
     return run_query(pool, lambda cur: select_query(cur, fields, 'listings', args_dic, extra_query, count, page))

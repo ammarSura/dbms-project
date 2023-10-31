@@ -117,27 +117,41 @@ def get_listings():
 
 @app.route('/listings/<id>', methods=['GET'])
 def listing_get_handler(id):
-    listing = get_listing(pool, {'id': id})
+    query_lst = [
+        sql.SQL('\nLEFT JOIN hosts ON hosts.id = listings.host_id'),
+        sql.SQL('\nLEFT JOIN users ON users.id = hosts.user_id'),
+    ]
+
+    listing = get_listing(pool, {
+        'id': id,
+        'extra_fields': [
+            sql.Identifier('hosts', 'location') + sql.SQL(' AS host_location'),
+            sql.Identifier('hosts', 'neighbourhood') + sql.SQL(' AS host_neighbourhood'),
+            sql.Identifier('hosts', 'is_superhost') + sql.SQL(' AS host_is_superhost'),
+            sql.Identifier('users', 'name') + sql.SQL(' AS host_name'),
+            sql.Identifier('users', 'picture_url') + sql.SQL(' AS host_picture_url'),
+        ],
+        'extra_query': {
+            'query_lst': query_lst,
+
+        }
+    })
     if not listing:
         abort(404, 'Listing not found')
 
-    host = get_host(pool, {"id": listing.get("host_id")})
-    host_user = get_user(pool, {"id": host.get("user_id")})
+    host_user = {
+        'name': listing['host_name'],
+        'id': listing['host_id']
+    }
     reviews = get_reviews(pool, {'listing_id': id, 'count': 10})
-    review_users = []
-    for review in reviews:
-        review_user = get_user(pool, {'id': review.get('reviewer_id')})
-        review_users.append(review_user)
 
     message = {
         "authenticated": session.get("authenticated"),
         "user_id": session.get('user_id'),
         "host_id": session.get("host_id"),
         "listing": listing,
-        "host": host,
         "host_user": host_user,
         "reviews": reviews,
-        "review_users": review_users
     }
     return render_template('listingDetail.html', message=message)
 
