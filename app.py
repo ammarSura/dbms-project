@@ -23,6 +23,7 @@ from post_host import post_host
 from post_user import post_user
 from update_host import update_host
 from update_user import update_user
+from post_review import post_review
 
 # as per recommendation from @freylis, compile once only
 CLEANR = re.compile('<.*?>')
@@ -213,11 +214,23 @@ def listing_get_handler(id):
                 "cost": request.form.get("cost"),
                 "booker_id": session.get("user_id")
             }
-            post_booking(pool, args, app.logger)
-            return redirect(f"/users/{session.get('user_id')}/profile")
+            bid = post_booking(pool, args, app.logger)
+            if not bid:
+                message["error"] = "Something went wrong, couldn't place booking. Try again!"
+
+            return render_template('listingDetail.html', message=message)
 
         if ft == "review":
-            pass
+            args = {
+                "listing_id": id,
+                "reviewer_id": session.get("user_id"),
+                "comments": request.form.get("comments"),
+                "rating": request.form.get("rating")
+            }
+            rid = post_review(pool, args, app.logger)
+            if not rid:
+                message["error"] = "Something went wrong, couldn't post review. Try again!"
+            return render_template('listingDetail.html', message=message)
 
         if ft == "add":
             pass

@@ -104,7 +104,7 @@
                         <th scope="col">{{booking.get("id")}}</th>
                         <td>{{booking.get("start_date")}}</td>
                         <td>{{booking.get("end_date")}}</td>
-                        <td>{% set name = booking.get("listing_name").split("·")[0] %}{{name}}</td>
+                        <td><a href="/listings{{booking.get('listing_id')}}">{% set name = booking.get("listing_name").split("·")[0] %}{{name}}</a></td>
                     </tr>
             {% endfor %}
                 </tbody>
