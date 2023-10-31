@@ -136,6 +136,9 @@ create_table_lst = [
         ALTER COLUMN created_at SET DEFAULT current_timestamp,
         ALTER COLUMN updated_at SET DEFAULT current_timestamp;
     """,
+    """
+        ALTER TABLE bookings ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'pending';
+    """
 
 ]
 
