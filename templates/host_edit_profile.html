@@ -70,6 +70,8 @@
 </div>
 </div>
 </div>
+{% endblock %}
+{% block scripts %}
 <script>
     window.addEventListener('load', () => {
         const about = document.getElementById("about");
@@ -80,4 +82,4 @@
         neighbourhood.value = `{{ message.host.neighbourhood }}`;
     })
 </script>
-{% endblock %}
+{% endblock script %}

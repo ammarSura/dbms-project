@@ -1,6 +1,7 @@
 
 import os
 import re
+from datetime import datetime
 from hashlib import md5
 
 from flask import (Flask, abort, redirect, render_template, request, session,
@@ -25,6 +26,8 @@ from update_user import update_user
 
 # as per recommendation from @freylis, compile once only
 CLEANR = re.compile('<.*?>')
+
+ALL_ROWS_COUNT = 9223372036854775806
 
 
 def cleanhtml(raw_html):
@@ -126,17 +129,17 @@ def get_listings():
     return render_template('index.html', message=message)
 
 
-@app.route('/listings/<id>', methods=['GET', "POST"])
+@app.route('/listings/<id>', methods=['GET', 'POST'])
 def listing_get_handler(id):
     query_lst = [
         sql.SQL('\nLEFT JOIN hosts ON hosts.id = listings.host_id'),
         sql.SQL('\nLEFT JOIN users ON users.id = hosts.user_id'),
     ]
-
     listing = get_listing(pool, {
         'id': id,
         'extra_fields': [
-            sql.Identifier('hosts', 'location') + sql.SQL(' AS host_location'),
+            sql.Identifier('hosts', 'location') +
+            sql.SQL(' AS host_location'),
             sql.Identifier('hosts', 'neighbourhood') +
             sql.SQL(' AS host_neighbourhood'),
             sql.Identifier('hosts', 'is_superhost') +
@@ -147,7 +150,6 @@ def listing_get_handler(id):
         ],
         'extra_query': {
             'query_lst': query_lst,
-
         }
     })
     if not listing:
@@ -158,7 +160,6 @@ def listing_get_handler(id):
         'id': listing['host_id']
     }
     reviews = get_reviews(pool, {'listing_id': id, 'count': 10})
-
     message = {
         "authenticated": session.get("authenticated"),
         "user_id": session.get('user_id'),
@@ -167,25 +168,59 @@ def listing_get_handler(id):
         "host_user": host_user,
         "reviews": reviews,
     }
-    return render_template('listingDetail.html', message=message)
+    if request.method == "GET":
+        return render_template('listingDetail.html', message=message)
 
-    if request.method == "POST":  # add listing
-        pass
+    if request.method == "POST":
+        ft = request.form.get("form_type")
 
+        if ft == "book":
+            checkin = datetime.strptime(
+                request.form.get("checkin"), "%Y-%m-%d").date()
+            checkout = datetime.strptime(
+                request.form.get("checkout"), "%Y-%m-%d").date()
 
-@app.route("/listings/<id>/book", methods=["POST"])
-def book_listing(id):
-    args = {
-        "listing_id": id,
-        "num_guests": request.form.get("guests"),
-        "start_date": request.form.get("checkin"),
-        "end_date": request.form.get("checkout"),
-        "cost": request.form.get("cost"),
-        "booker_id": session.get("user_id")
-    }
-    bid = post_booking(pool, args, app.logger)
+            if checkin >= checkout:
+                message["error"] = "Check-in date must be before check-out date"
+                return render_template('listingDetail.html', message=message)
 
-    return redirect(f"/users/{session.get('user_id')}/profile")
+            days = (checkout - checkin).days
+            if days < listing.get('min_nights'):
+                message["error"] = f"Minimum nights required is {listing.get('min_nights')} days"
+                return render_template('listingDetail.html', message=message)
+
+            if days > listing.get('max_nights'):
+                message["error"] = f"Maximum nights allowed is {listing.get('max_nights')} days"
+                return render_template('listingDetail.html', message=message)
+
+            bookings = get_bookings(pool, {
+                'listing_id': id,
+                'count': ALL_ROWS_COUNT,
+            })
+            bookings = [] if not bookings else bookings
+
+            for booking in bookings:
+                if (checkin >= booking.get("start_date") and checkin <= booking.get("end_date")) or (checkout >= booking.get("start_date") and checkout <= booking.get("end_date")):
+                    message[
+                        "error"] = f"Booking overlaps with another booking starting on {booking.get('start_date')} and ending on {booking.get('end_date')}"
+                    return render_template('listingDetail.html', message=message)
+
+            args = {
+                "listing_id": id,
+                "num_guests": request.form.get("guests"),
+                "start_date": checkin,
+                "end_date": checkout,
+                "cost": request.form.get("cost"),
+                "booker_id": session.get("user_id")
+            }
+            post_booking(pool, args, app.logger)
+            return redirect(f"/users/{session.get('user_id')}/profile")
+
+        if ft == "review":
+            pass
+
+        if ft == "add":
+            pass
 
 
 ######## USERS ########
@@ -195,7 +230,18 @@ def get_user_profile_handler(id):
         return redirect("/")
 
     user = get_user(pool, {'id': id})
-    bookings = get_bookings(pool, {'booker_id': id})
+
+    bookings = get_bookings(pool, {
+        'booker_id': id,
+        'count': ALL_ROWS_COUNT,
+        'extra_fields': [
+            sql.Identifier('listings', 'name') +
+            sql.SQL(' AS listing_name'),
+        ],
+        'extra_query': {
+            'query_lst': [sql.SQL('\nLEFT JOIN listings ON listings.id = bookings.listing_id')],
+        }
+    })
     if user is None:
         abort(404, 'User not found')
 
@@ -493,9 +539,8 @@ def signup_handler():
 
         return redirect("/")
 
-# Analytics
 
-
+######## ANALYTICS ########
 @app.route('/best-listings', methods=['GET'])
 def best_listings_handler():
     message = {
