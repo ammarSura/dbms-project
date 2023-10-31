@@ -3,6 +3,7 @@ import os
 import re
 from datetime import datetime
 from hashlib import md5
+from update_booking import update_booking
 
 from flask import (Flask, abort, redirect, render_template, request, session,
                    url_for)
@@ -34,7 +35,6 @@ ALL_ROWS_COUNT = 9223372036854775806
 def cleanhtml(raw_html):
     cleantext = re.sub(CLEANR, '', raw_html)
     return cleantext
-
 
 pool = create_pool()
 
@@ -425,6 +425,18 @@ def host_profile(id):
         return redirect(f"/hosts/{host_id}/profile")
 
 
+######## BOOKINGS ########
+@app.route("/booking/<id>", methods=["PATCH"])
+def booking_patch_handler(id):
+    status = request.form.get("status")
+    if(status not in ["rejected", "approved", "pending"]):
+        abort(400, "Invalid status")
+    update_booking(pool, {
+        'status': status
+    }, id)
+
+    return redirect("/hosts/" + str(session.get("host_id")) + "/profile")
+
 ######## AUTHENTICATION ########
 @app.route('/signin', methods=['GET', 'POST'])
 def login_handler():
@@ -594,3 +606,4 @@ def best_hosts_handler():
         "hosts": get_best_hosts(pool, args_dic)
     }
     return render_template('best-hosts.html', message=message)
+
