@@ -118,6 +118,9 @@ def get_listings():
 @app.route('/listings/<id>', methods=['GET'])
 def listing_get_handler(id):
     listing = get_listing(pool, {'id': id})
+    if not listing:
+        abort(404, 'Listing not found')
+
     host = get_host(pool, {"id": listing.get("host_id")})
     host_user = get_user(pool, {"id": host.get("user_id")})
     reviews = get_reviews(pool, {'listing_id': id, 'count': 10})
