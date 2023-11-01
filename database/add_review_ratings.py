@@ -1,4 +1,4 @@
-from db_utils import create_pool, run_query
+from utils.db_utils import create_pool, run_query
 
 
 pool = create_pool()

@@ -3,7 +3,8 @@ from logging import Logger
 from psycopg import Cursor
 from psycopg_pool import ConnectionPool
 
-from db_utils import post_query, run_query, set_missing_params_to_none
+from utils.db_utils import post_query, run_query, set_missing_params_to_none
+
 
 def post_user(pool: ConnectionPool, args_dic: dict, logger: Logger) -> int or None:
 

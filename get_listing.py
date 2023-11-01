@@ -1,6 +1,6 @@
 from psycopg import Connection, Cursor, sql
 
-from db_utils import run_query, select_query, set_missing_params_to_none
+from utils.db_utils import run_query, select_query, set_missing_params_to_none
 
 
 def get_listing(pool: Connection, args_dic: dict):

@@ -1,6 +1,6 @@
 from psycopg import Cursor
 
-from db_utils import create_pool, run_query
+from utils.db_utils import create_pool, run_query
 
 pool = create_pool()
 create_table_lst = [
@@ -121,17 +121,17 @@ create_table_lst = [
         ALTER TABLE reviews
         ALTER COLUMN created_at SET DEFAULT current_timestamp
     """,
-     """
+    """
         ALTER TABLE hosts
         ALTER COLUMN host_since SET DEFAULT current_timestamp,
         ALTER COLUMN updated_at SET DEFAULT current_timestamp;
     """,
-     """
+    """
         ALTER TABLE bookings
         ALTER COLUMN created_at SET DEFAULT current_timestamp,
         ALTER COLUMN updated_at SET DEFAULT current_timestamp;
     """,
-     """
+    """
         ALTER TABLE listings
         ALTER COLUMN created_at SET DEFAULT current_timestamp,
         ALTER COLUMN updated_at SET DEFAULT current_timestamp;

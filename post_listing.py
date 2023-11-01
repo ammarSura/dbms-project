@@ -2,7 +2,7 @@ from logging import Logger
 
 from psycopg import Connection, Cursor
 
-from db_utils import post_query, run_query, set_missing_params_to_none
+from utils.db_utils import post_query, run_query, set_missing_params_to_none
 
 
 def post_listing_query(cur: Cursor, args_dic: dict, logger: Logger) -> int or None:

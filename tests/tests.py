@@ -21,14 +21,16 @@ from get_best_listings import get_best_listing
 from faker import Faker
 from psycopg import Connection, sql
 
-from db_utils import create_pool
+from utils.db_utils import create_pool
 from get_host import get_host
 from get_listing import get_listing
 from get_user import get_user
 from post_host import post_host
 from post_listing import post_listing
 from post_user import post_user
-from test_utils import (create_fake_booking, create_fake_host, create_fake_listing, create_fake_review, create_fake_user, delete_keys)
+from utils.test_utils import (create_fake_booking, create_fake_host,
+                              create_fake_listing, create_fake_review, create_fake_user, delete_keys)
+
 
 class MethodTester(unittest.TestCase):
     @classmethod
@@ -41,8 +43,8 @@ class MethodTester(unittest.TestCase):
 
     def setUp(self):
         random_user = create_fake_user(self.fake)
-        if(random_user.get('name') == None):
-           raise Exception('Name is required')
+        if (random_user.get('name') == None):
+            raise Exception('Name is required')
         user_id = post_user(self.pool, random_user, self.logger)
         self.test_user = get_user(self.pool, {
             'id': user_id
@@ -106,6 +108,7 @@ class MethodTester(unittest.TestCase):
         posted_item_id = post_item(self.pool, new_item, self.logger)
         self.assertIsNotNone(posted_item_id)
 
+
 class TestUserMethods(MethodTester):
     def user_equality_check(self, test_user: dict, fetched_user: dict or None):
         self.assertIsNotNone(fetched_user)
@@ -121,17 +124,22 @@ class TestUserMethods(MethodTester):
     def test_get_user(self):
         self._test_get_item(
             create_fake_user, self.user_equality_check, post_user, get_user)
+
     def test_get_user_missing_param(self):
         self._test_get_item_invalid_param(
             create_fake_user, post_user, get_user)
+
     def test_post_user(self):
         self._test_post_item(create_fake_user, post_user, get_user)
+
     def test_post_user_missing_required_param(self):
         return self._test_post_item_missing_required_param('name', create_fake_user, post_user)
+
     def test_post_user_missing_param(self):
         return self._test_post_item_missing_param('picture_url', create_fake_user, post_user)
+
     def test_update_user(self):
-        update={
+        update = {
             'email': self.fake.unique.email(),
             'picture_url': self.fake.url()
         }
@@ -143,6 +151,7 @@ class TestUserMethods(MethodTester):
 
         self.assertEqual(update['email'], fetched_user['email'])
         self.assertEqual(update['picture_url'], fetched_user['picture_url'])
+
 
 class TestHostMethods(MethodTester):
     def host_equality_check(self, test_host: dict, fetched_host: dict or None):
@@ -174,9 +183,11 @@ class TestHostMethods(MethodTester):
     def test_post_host(self):
         self._test_post_item(
             self.create_fake_host_with_user_id(), post_host, get_host)
+
     def test_post_host_missing_required_param(self):
         self._test_post_item_missing_required_param(
             'user_id', self.create_fake_host_with_user_id(), post_host)
+
     def test_post_host_missing_param(self):
         self._test_post_item_missing_param(
             'about', self.create_fake_host_with_user_id(), post_host)
@@ -195,8 +206,10 @@ class TestHostMethods(MethodTester):
         test_host_after_update = get_host(self.pool, {
             'id': test_host_id
         })
-        self.assertEqual(test_host_before_update['id'], test_host_after_update['id'])
+        self.assertEqual(
+            test_host_before_update['id'], test_host_after_update['id'])
         self.assertEqual(test_host_after_update['about'], update['about'])
+
 
 class TestListingMethods(MethodTester):
     def listing_equality_check(self, test_listing: dict, fetched_listing: dict or None):
@@ -242,9 +255,10 @@ class TestListingMethods(MethodTester):
             'extra_query': {
                 'query_lst': [
                     sql.SQL("\nINNER JOIN hosts ON hosts.id = listings.host_id"),
-                    sql.SQL("\nLEFT JOIN reviews ON reviews.listing_id = listings.id"),
+                    sql.SQL(
+                        "\nLEFT JOIN reviews ON reviews.listing_id = listings.id"),
                     sql.SQL("\nINNER JOIN users ON users.id = reviews.reviewer_id")
-                ]            }
+                ]}
         })
         print('HEX', fetched_listing)
 
@@ -269,7 +283,6 @@ class TestListingMethods(MethodTester):
             'count': 11,
         }
 
-
         extra_query = []
         extra_query.append(
             sql.SQL("\nINNER JOIN hosts ON hosts.id = listings.host_id")
@@ -281,9 +294,8 @@ class TestListingMethods(MethodTester):
             sql.SQL("\nAND price >= %(min_price)s")
         )
         extra_query.append(
-                sql.SQL("\nAND listings.id NOT IN (SELECT DISTINCT listing_id FROM bookings WHERE start_date <= %(check_in)s AND end_date >= %(check_in)s AND listing_id = listings.id)")
-            )
-
+            sql.SQL("\nAND listings.id NOT IN (SELECT DISTINCT listing_id FROM bookings WHERE start_date <= %(check_in)s AND end_date >= %(check_in)s AND listing_id = listings.id)")
+        )
 
         args_dic['extra_query'] = {
             'query_lst': extra_query,
@@ -295,11 +307,12 @@ class TestListingMethods(MethodTester):
             }
         }
         # self.assertGreaterEqual(len(listings_with_args), 1)
-        listings_with_args = get_listing(self.pool,args_dic)
+        listings_with_args = get_listing(self.pool, args_dic)
         # found_item = next(
         #     item for item in listings_with_args if item["id"] == listings[0]["id"])
         # self.assertIsNotNone(found_item)
         # self.assertEqual(found_item['id'], listings[0]['id'])
+
 
 class TestAnalyticsMethods(MethodTester):
     def test_best_listings_query(self):
@@ -329,6 +342,7 @@ class TestAnalyticsMethods(MethodTester):
         self.assertTrue(isinstance(hosts, list))
         self.assertEqual(len(hosts), 10)
 
+
 class TestReviewsMethods(MethodTester):
     def create_fake_review_with_user_id(self):
         test_user_id = self.test_user['id']
@@ -342,26 +356,34 @@ class TestReviewsMethods(MethodTester):
         self.assertIsNotNone(fetched_listing)
         self.assertIsNotNone(fetched_listing['created_at'])
         self.assertIsNotNone(fetched_listing['id'])
-        self.assertAlmostEqual(fetched_listing['rating'], Decimal(test_listing['rating']))
-        self.assertEqual(fetched_listing['listing_id'], test_listing['listing_id'])
-        self.assertEqual(fetched_listing['reviewer_id'], test_listing['reviewer_id'])
+        self.assertAlmostEqual(
+            fetched_listing['rating'], Decimal(test_listing['rating']))
+        self.assertEqual(
+            fetched_listing['listing_id'], test_listing['listing_id'])
+        self.assertEqual(
+            fetched_listing['reviewer_id'], test_listing['reviewer_id'])
         self.assertEqual(fetched_listing['comments'], test_listing['comments'])
 
-
     def test_get_review(self):
-        self._test_get_item(self.create_fake_review_with_user_id(), self.equality_check, post_review, get_reviews)
+        self._test_get_item(self.create_fake_review_with_user_id(
+        ), self.equality_check, post_review, get_reviews)
 
     def test_get_reviews_missing_param(self):
-        self._test_get_item_invalid_param(self.create_fake_review_with_user_id(), post_review, get_reviews)
+        self._test_get_item_invalid_param(
+            self.create_fake_review_with_user_id(), post_review, get_reviews)
 
     def test_post_reviews(self):
-        self._test_post_item(self.create_fake_review_with_user_id(), post_review, get_reviews)
+        self._test_post_item(
+            self.create_fake_review_with_user_id(), post_review, get_reviews)
 
     def test_post_reviews_missing_required_param(self):
-        self._test_post_item_missing_required_param('listing_id', self.create_fake_review_with_user_id(), post_review)
+        self._test_post_item_missing_required_param(
+            'listing_id', self.create_fake_review_with_user_id(), post_review)
 
     def test_get_reviews(self):
-        self._test_get_items(self.create_fake_review_with_user_id(), self.equality_check, post_review, get_reviews, {'count': 11})
+        self._test_get_items(self.create_fake_review_with_user_id(
+        ), self.equality_check, post_review, get_reviews, {'count': 11})
+
 
 class TestBookingMethods(MethodTester):
     def create_fake_booking_with_user_id(self):
@@ -371,25 +393,31 @@ class TestBookingMethods(MethodTester):
         new_listing = create_fake_listing(self.fake, new_host_id)
         new_listing_id = post_listing(self.pool, new_listing, self.logger)
         return lambda faker: create_fake_booking(faker, new_listing_id, test_user_id)
+
     def equality_check(self, test_listing: dict, fetched_listing: dict or None):
         self.assertIsNotNone(fetched_listing)
         self.assertIsNotNone(fetched_listing['created_at'])
         self.assertIsNotNone(fetched_listing['id'])
-        self.assertAlmostEqual(fetched_listing['cost'], Decimal(test_listing['cost']))
-        self.assertEqual(fetched_listing['listing_id'], test_listing['listing_id'])
-        self.assertEqual(fetched_listing['booker_id'], test_listing['booker_id'])
+        self.assertAlmostEqual(
+            fetched_listing['cost'], Decimal(test_listing['cost']))
+        self.assertEqual(
+            fetched_listing['listing_id'], test_listing['listing_id'])
+        self.assertEqual(
+            fetched_listing['booker_id'], test_listing['booker_id'])
         # self.assertEqual(fetched_listing['start_date'], test_listing['start_date'])
         # self.assert(fetched_listing['end_date'], test_listing['end_date'])
         pass
 
     def test_get_booking(self):
-        booking_id = self._test_get_item(self.create_fake_booking_with_user_id(), self.equality_check, post_booking, get_bookings)
+        booking_id = self._test_get_item(self.create_fake_booking_with_user_id(
+        ), self.equality_check, post_booking, get_bookings)
         self.assertIsNotNone(booking_id)
         booking = get_bookings(self.pool, {
             'id': booking_id,
             'extra_query': {
                 'query_lst': [
-                    sql.SQL('\nLEFT JOIN listings ON listings.id = bookings.listing_id'),
+                    sql.SQL(
+                        '\nLEFT JOIN listings ON listings.id = bookings.listing_id'),
                 ],
                 'args_dic': {
                     'host_id': self.test_user['id']
@@ -404,7 +432,8 @@ class TestBookingMethods(MethodTester):
         booking = get_bookings(self.pool, {
             'extra_query': {
                 'query_lst': [
-                    sql.SQL('\nLEFT JOIN listings ON listings.id = bookings.listing_id'),
+                    sql.SQL(
+                        '\nLEFT JOIN listings ON listings.id = bookings.listing_id'),
                     sql.SQL('\nWHERE listings.host_id = %(host_id)s'),
                 ],
                 'args_dic': {
@@ -415,13 +444,16 @@ class TestBookingMethods(MethodTester):
         print(booking)
 
     def test_get_booking_missing_param(self):
-        self._test_get_item_invalid_param(self.create_fake_booking_with_user_id(), post_booking, get_bookings)
+        self._test_get_item_invalid_param(
+            self.create_fake_booking_with_user_id(), post_booking, get_bookings)
 
     def test_post_booking(self):
-        self._test_post_item(self.create_fake_booking_with_user_id(), post_booking, get_bookings)
+        self._test_post_item(
+            self.create_fake_booking_with_user_id(), post_booking, get_bookings)
 
     def test_get_bookings(self):
-        self._test_get_items(self.create_fake_booking_with_user_id(), self.equality_check, post_booking, get_bookings, {'count': 11})
+        self._test_get_items(self.create_fake_booking_with_user_id(
+        ), self.equality_check, post_booking, get_bookings, {'count': 11})
 
 
 class TestSQLInjection(MethodTester):
@@ -430,6 +462,7 @@ class TestSQLInjection(MethodTester):
         new_user['name'] = name
         id = post_user(self.pool, new_user, self.logger)
         self.assertIsNotNone(id)
+
     def test_get_user_sanity(self):
         test_strings = [
             "Ammar's test",
@@ -443,4 +476,3 @@ class TestSQLInjection(MethodTester):
 if __name__ == '__main__':
     unittest.main()
     print('Starting tests')
-

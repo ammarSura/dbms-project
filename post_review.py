@@ -1,6 +1,7 @@
 from logging import Logger
-from db_utils import post_query, run_query, set_missing_params_to_none
+from utils.db_utils import post_query, run_query, set_missing_params_to_none
 from psycopg_pool import ConnectionPool
+
 
 def post_review_query(cur, args_dic, logger):
     try:
@@ -14,6 +15,7 @@ def post_review_query(cur, args_dic, logger):
     except Exception as e:
         logger.error(e)
         return None
+
 
 def post_review(pool: ConnectionPool, args_dic: dict, logger: Logger) -> int or None:
     posted_review_id = run_query(

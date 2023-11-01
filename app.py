@@ -10,7 +10,7 @@ from flask import (Flask, abort, redirect, render_template, request, session,
 from psycopg import sql
 from werkzeug.utils import secure_filename
 
-from db_utils import create_pool, query_append_check, run_query, select_query
+from utils.db_utils import create_pool, query_append_check, run_query, select_query
 from get_best_hosts import get_best_hosts
 from get_best_listings import get_best_listing
 from get_booking import get_bookings
@@ -629,4 +629,3 @@ def best_hosts_handler():
         "hosts": get_best_hosts(pool, args_dic)
     }
     return render_template('best-hosts.html', message=message)
-

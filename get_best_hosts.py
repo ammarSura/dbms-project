@@ -1,10 +1,11 @@
 from psycopg import Connection, Cursor, sql
 
-from db_utils import run_query, select_query
+from utils.db_utils import run_query, select_query
+
 
 def get_best_hosts(pool: Connection, args_dic: dict) -> int or None:
     fields = [
-        sql.Identifier('best_hosts','id'),
+        sql.Identifier('best_hosts', 'id'),
         sql.Identifier('best_hosts', 'picture_url'),
         sql.Identifier('best_hosts', 'name'),
         sql.Identifier('best_hosts', 'avg_rating'),
@@ -13,10 +14,10 @@ def get_best_hosts(pool: Connection, args_dic: dict) -> int or None:
     ]
     count = None
     extra_query = None
-    if('count' in args_dic):
+    if ('count' in args_dic):
         count = args_dic['count']
         del args_dic['count']
-    if('extra_query' in args_dic):
+    if ('extra_query' in args_dic):
         extra_query = args_dic['extra_query']
         del args_dic['extra_query']
 

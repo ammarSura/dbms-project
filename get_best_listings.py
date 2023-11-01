@@ -1,11 +1,11 @@
 from psycopg import Connection, Cursor, sql
 
-from db_utils import run_query, select_query, set_missing_params_to_none
+from utils.db_utils import run_query, select_query, set_missing_params_to_none
 
 
 def get_best_listing(pool: Connection, args_dic: dict) -> int or None:
     fields = [
-        sql.Identifier('best_listings','id'),
+        sql.Identifier('best_listings', 'id'),
         sql.Identifier('best_listings', 'picture_url'),
         sql.Identifier('best_listings', 'name'),
         sql.Identifier('best_listings', 'price'),
@@ -18,17 +18,17 @@ def get_best_listing(pool: Connection, args_dic: dict) -> int or None:
     count = None
     extra_query = None
     order_by = None
-    if('extra_query' in args_dic):
+    if ('extra_query' in args_dic):
         extra_query = args_dic['extra_query']
         del args_dic['extra_query']
-    if('count' in args_dic):
+    if ('count' in args_dic):
         count = args_dic['count']
         del args_dic['count']
-    if('is_budget' in args_dic):
+    if ('is_budget' in args_dic):
         is_budget = args_dic['is_budget']
         del args_dic['is_budget']
-        if(is_budget):
-            if(extra_query is not None):
+        if (is_budget):
+            if (extra_query is not None):
                 Exception('Not implemented')
             extra_query = {
                 'query_lst': [

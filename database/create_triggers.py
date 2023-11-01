@@ -1,4 +1,4 @@
-from db_utils import create_pool, run_query
+from utils.db_utils import create_pool, run_query
 
 
 func_lst = [
@@ -22,7 +22,7 @@ func_lst = [
 			END;
 		$$;
     """,
-	"""
+    """
 		CREATE or replace TRIGGER rating_added
 		AFTER insert
 		ON reviews
@@ -33,4 +33,4 @@ func_lst = [
 
 pool = create_pool()
 for query in func_lst:
-	run_query(pool, lambda cur: cur.execute(query))
+    run_query(pool, lambda cur: cur.execute(query))

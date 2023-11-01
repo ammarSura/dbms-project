@@ -1,4 +1,4 @@
-from db_utils import run_query, create_pool
+from utils.db_utils import run_query, create_pool
 
 refreshes = [
     "REFRESH MATERIALIZED view best_hosts WITH data",

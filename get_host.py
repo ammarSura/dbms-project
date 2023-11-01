@@ -1,6 +1,5 @@
 from psycopg import Connection, Cursor, sql
-from db_utils import run_query, select_query, set_missing_params_to_none
-
+from utils.db_utils import run_query, select_query, set_missing_params_to_none
 
 
 def get_host(pool: Connection, args_dic: dict):
@@ -20,14 +19,14 @@ def get_host(pool: Connection, args_dic: dict):
     ]
     extra_query = None
 
-    if('id' in args_dic):
+    if ('id' in args_dic):
         id = args_dic['id']
         del args_dic['id']
         args_dic['hosts.id'] = id
-    if('extra_fields' in args_dic):
+    if ('extra_fields' in args_dic):
         fields.extend(args_dic['extra_fields'])
         del args_dic['extra_fields']
-    if('extra_query' in args_dic):
+    if ('extra_query' in args_dic):
         extra_query = args_dic['extra_query']
         del args_dic['extra_query']
     return run_query(pool, lambda cur: select_query(cur, fields, 'hosts', args_dic, extra_query))

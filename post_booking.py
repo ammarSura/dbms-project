@@ -1,4 +1,4 @@
-from db_utils import post_query, run_query, set_missing_params_to_none
+from utils.db_utils import post_query, run_query, set_missing_params_to_none
 from psycopg import sql, ClientCursor
 
 

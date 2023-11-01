@@ -1,6 +1,6 @@
 from psycopg import sql
 
-from db_utils import run_query, select_query
+from utils.db_utils import run_query, select_query
 
 
 def get_bookings_query(cur, args_dic, logger):
@@ -33,7 +33,7 @@ def get_bookings(pool, args_dic):
         extra_fields = args_dic['extra_fields']
         del args_dic['extra_fields']
 
-    if('id' in args_dic):
+    if ('id' in args_dic):
         args_dic['bookings.id'] = args_dic['id']
         del args_dic['id']
         args_dic['bookings.id'] = int(args_dic['bookings.id'])

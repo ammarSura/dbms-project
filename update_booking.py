@@ -1,4 +1,4 @@
-from db_utils import run_query, update_query
+from utils.db_utils import run_query, update_query
 
 
 def update_booking(pool, args_dic, id: str):

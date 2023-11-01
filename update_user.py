@@ -1,5 +1,5 @@
 import sys
-from db_utils import create_pool, run_query, update_query
+from utils.db_utils import create_pool, run_query, update_query
 from psycopg import sql, ClientCursor
 
 
