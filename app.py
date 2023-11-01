@@ -49,7 +49,7 @@ def get_listings():
     args_dic = {
         'count': int(request.args.get('count')) if request.args.get('count') else 12,
         'page': int(request.args.get('page')) if request.args.get('page') else 0,
-        'neighbourhood': request.args.get('city') or None,
+        'listings.neighbourhood': request.args.get('city') or None,
         'room_type': request.args.get('room_type') or None,
         'bedrooms': int(request.args.get('bedrooms')) if request.args.get('bedrooms') else None,
         'beds': int(request.args.get('beds')) if request.args.get('beds') else None,
@@ -85,15 +85,15 @@ def get_listings():
         query_append_check(extra_query)
         if (query_lst_args['check_in'] and query_lst_args['check_out']):
             extra_query.append(
-                sql.SQL("listings.id NOT IN (SELECT DISTINCT listing_id FROM booking WHERE start_date <= %(check_in)s AND end_date >= %(check_in)s OR start_date <= %(check_out)s AND end_date >= %(check_out)s AND listing_id = listings.id)")
+                sql.SQL("listings.id NOT IN (SELECT DISTINCT listing_id FROM bookings WHERE start_date <= %(check_in)s AND end_date >= %(check_in)s OR start_date <= %(check_out)s AND end_date >= %(check_out)s AND listing_id = listings.id)")
             )
         elif query_lst_args['check_in']:
             extra_query.append(
-                sql.SQL("listings.id NOT IN (SELECT DISTINCT listing_id FROM booking WHERE start_date <= %(check_in)s AND end_date >= %(check_in)s AND listing_id = listings.id)")
+                sql.SQL("listings.id NOT IN (SELECT DISTINCT listing_id FROM bookings WHERE start_date <= %(check_in)s AND end_date >= %(check_in)s AND listing_id = listings.id)")
             )
         else:
             extra_query.append(
-                sql.SQL("listings.id NOT IN (SELECT DISTINCT listing_id FROM booking WHERE start_date <= %(check_out)s AND end_date >= %(check_out)s AND listing_id = listings.id)")
+                sql.SQL("listings.id NOT IN (SELECT DISTINCT listing_id FROM bookings WHERE start_date <= %(check_out)s AND end_date >= %(check_out)s AND listing_id = listings.id)")
             )
     if (amenities):
         for i in range(len(amenities)):
@@ -119,13 +119,14 @@ def get_listings():
         listing['stars'] = "⭐"*int(listing['rating']
                                    ) if listing['rating'] else "No reviews"
         listings_with_starts.append(listing)
+    print(listings_with_starts)
     message = {
         "authenticated": session.get("authenticated"),
         "user_id": session.get('user_id'),
         "host_id": session.get("host_id"),
         "listings": listings_with_starts,
         "cities": neighbourhood_lst,
-        "selected_city": args_dic['neighbourhood']
+        "selected_city": args_dic.get('neighbourhood')
     }
     return render_template('index.html', message=message)
 
@@ -481,7 +482,7 @@ def login_handler():
         user = run_query(pool, lambda cur: select_query(
             cur, fields, 'users', args))
 
-        if user.get("id"):
+        if user and user.get("id"):
             session['authenticated'] = True
             session['user_id'] = user.get("id")
             if user.get("is_host"):
