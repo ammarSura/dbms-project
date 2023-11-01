@@ -8,11 +8,10 @@ flask = "*"
 python-dotenv = "*"
 psycopg = "*"
 psycopg-pool = "*"
-faker = "*"
 
 [dev-packages]
-pylint = "*"
 pylint-flask = "*"
+faker = "*"
 
 [requires]
 python_version = "3.11"
