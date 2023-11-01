@@ -167,6 +167,9 @@ create_index_lst = [
     """,
     """
         CREATE INDEX IF NOT EXISTS review_reviewer_id ON reviews(reviewer_id)
+    """,
+    """
+        CREATE INDEX IF NOT EXISTS review_create_at ON reviews(created_at)
     """
 ]
 
@@ -222,7 +225,6 @@ for query in create_index_lst:
     except Exception as e:
         print(e)
         print(query)
-        break
 for query in create_materialized_view_lst:
     try:
         run_query(pool, lambda cur: cur.execute(query))
