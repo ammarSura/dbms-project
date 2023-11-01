@@ -32,6 +32,11 @@ def get_bookings(pool, args_dic):
     if ('extra_fields' in args_dic):
         extra_fields = args_dic['extra_fields']
         del args_dic['extra_fields']
+
+    if('id' in args_dic):
+        args_dic['bookings.id'] = args_dic['id']
+        del args_dic['id']
+        args_dic['bookings.id'] = int(args_dic['bookings.id'])
     fields = [
         sql.Identifier('bookings', 'id'),
         sql.Identifier('bookings', 'listing_id'),

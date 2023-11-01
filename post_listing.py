@@ -2,7 +2,7 @@ from logging import Logger
 
 from psycopg import Connection, Cursor
 
-from db_utils import run_query, set_missing_params_to_none
+from db_utils import post_query, run_query, set_missing_params_to_none
 
 
 def post_listing_query(cur: Cursor, args_dic: dict, logger: Logger) -> int or None:
@@ -22,23 +22,6 @@ def post_listing_query(cur: Cursor, args_dic: dict, logger: Logger) -> int or No
 
 
 def post_listing(pool: Connection, args_dic: dict, logger: Logger) -> int or None:
-    params = [
-        'name',
-        'picture_url',
-        'price',
-        'property_type',
-        'room_type',
-        'accommodates',
-        'bathrooms',
-        'bedrooms',
-        'beds',
-        'amenities',
-        'host_id',
-        'neighbourhood',
-        'neighbourhood_overview',
-        'rating',
-    ]
-    set_missing_params_to_none(args_dic, params)
     posted_host_id = run_query(
-        pool, lambda cur: post_listing_query(cur, args_dic, logger))
+        pool, lambda cur: post_query(cur, 'listings', args_dic))
     return posted_host_id

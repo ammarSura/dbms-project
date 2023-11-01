@@ -3,7 +3,7 @@ from logging import Logger
 from psycopg import Cursor
 from psycopg_pool import ConnectionPool
 
-from db_utils import run_query, set_missing_params_to_none
+from db_utils import post_query, run_query, set_missing_params_to_none
 
 
 def post_host_query(cur: Cursor, args_dic: dict, logger: Logger) -> int or None:
@@ -23,17 +23,8 @@ def post_host_query(cur: Cursor, args_dic: dict, logger: Logger) -> int or None:
 
 
 def post_host(pool: ConnectionPool, args_dic: dict, logger: Logger) -> int or None:
-    set_missing_params_to_none(args_dic, [
-        'user_id',
-        'is_superhost',
-        'about',
-        'response_rate',
-        'response_time',
-        'identity_verified',
-        'acceptance_rate',
-        'location',
-        'neighbourhood'
-    ])
+
+
     posted_host_id = run_query(
-        pool, lambda cur: post_host_query(cur, args_dic, logger))
+        pool, lambda cur: post_query(cur, 'hosts', args_dic))
     return posted_host_id
