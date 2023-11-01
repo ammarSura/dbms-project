@@ -1,4 +1,4 @@
-from db_utils import create_pool
+from db_utils import create_pool, run_query
 
 
 pool = create_pool()
@@ -12,8 +12,10 @@ query_lst = [
     """
 ]
 
-with pool.cursor() as cur:
-    for query in query_lst:
-        cur.execute(query)
-    pool.commit()
-    pool.closeall()
+for query in query_lst:
+    try:
+        run_query(pool, lambda cur: cur.execute(query))
+    except Exception as e:
+        print(e)
+        print(query)
+        break
