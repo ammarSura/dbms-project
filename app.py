@@ -249,8 +249,7 @@ def get_user_profile_handler(id):
         'booker_id': id,
         'count': ALL_ROWS_COUNT,
         'extra_fields': [
-            sql.Identifier('listings', 'name') +
-            sql.SQL(' AS listing_name'),
+            sql.Identifier('listings', 'name') + sql.SQL(' AS listing_name'),
         ],
         'extra_query': {
             'query_lst': [sql.SQL('\nLEFT JOIN listings ON listings.id = bookings.listing_id')],
@@ -383,19 +382,28 @@ def get_user_profile_handler(id):
 ######## HOSTS ########
 @app.route("/hosts/<id>/profile", methods=["GET", "POST"])
 def host_profile(id):
-    host = get_host(pool, {"id": id})
+    host = get_host(pool, {
+        "id": id,
+        'extra_fields': [
+            sql.Identifier('users', 'name'),
+            sql.Identifier('users', 'picture_url'),
+            sql.Identifier('users', 'email'),
+        ],
+        "extra_query": {
+            "query_lst": [
+                sql.SQL('\nLEFT JOIN users ON users.id = hosts.user_id'),
+            ]
+        }
+    })
     if host == None:
         abort(404, 'Host not found')
-
-    host_user = get_user(pool, {"id": host.get("user_id")})
 
     if request.method == "GET":
         message = {
             "authenticated": session.get("authenticated"),
             "user_id": session.get('user_id'),
             "host_id": session.get("host_id"),
-            "host": host,
-            "host_user": host_user
+            "host": host
         }
         if str(session.get("host_id")) != id:
             template = "host_view_profile.html"
@@ -417,7 +425,6 @@ def host_profile(id):
 
         })
         message["bookings"] = bookings
-        print('qwe', bookings)
         return render_template(template, message=message)
 
     if request.method == "POST":
@@ -434,7 +441,6 @@ def host_profile(id):
                 "user_id": session.get('user_id'),
                 "host_id": session.get("host_id"),
                 "host": host,
-                "host_user": host_user,
                 "error": "Something went wrong. Please try again."
             }
             return render_template("host_edit_profile.html", message=message)

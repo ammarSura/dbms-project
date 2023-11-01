@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Host | {{ message.get("host_user").get("name") }}</title>
+<title>Host | {{ message.get("host").get("name") }}</title>
 <link href={{ url_for('static', filename='css/user_profile.css' )}} rel="stylesheet">
 {% endblock %}
 
@@ -10,17 +10,17 @@
     <div class="row">
         <div class="col-md-3 border-right">
             <div class="d-flex flex-column align-items-center text-center p-3 py-5">
-            {%if not message.host_user.get("picture_url")%}
+            {%if not message.host.get("picture_url")%}
                 {% set picture_url =
                 "https://st3.depositphotos.com/15648834/17930/v/600/depositphotos_179308454-stock-illustration-unknown-person-silhouette-glasses-profile.jpg" %}
             {% else %}
-            {% set picture_url = message.host_user.picture_url%}
+            {% set picture_url = message.host.picture_url%}
             {% endif %}
             <img class="rounded-circle mt-5"
                     width="150px"
                     src={{ picture_url }}>
-                    <span class="font-weight-bold">{{ message.host_user.get("name") }}</span>
-                    <span class="text-black-50">{{ message.host_user.get("email") }}</span>
+                    <span class="font-weight-bold">{{ message.host.get("name") }}</span>
+                    <span class="text-black-50">{{ message.host.get("email") }}</span>
                     <span></span>
             </div>
         </div>
@@ -41,7 +41,7 @@
                 <div class="row mt-2">
                     <div class="col-md-4">
                         <label class="labels">Name</label>
-                        <input disabled type="text" name="name" id="name" class="form-control" placeholder='{{ message.host_user.name }}' value='{{ message.host_user.name }}'>
+                        <input disabled type="text" name="name" id="name" class="form-control" placeholder='{{ message.host.name }}' value='{{ message.host.name }}'>
                     </div>
                     <div class="col-md-4">
                         <label class="labels">Location</label>
