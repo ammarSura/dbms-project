@@ -1,4 +1,3 @@
-import sys
 import time
 from typing import Callable
 from statistics import mean
@@ -7,7 +6,6 @@ from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
 from env import DB_URL
-
 
 def set_missing_params_to_none(args_dic: dict, required_params: list):
     for param in required_params:
@@ -28,7 +26,7 @@ def run_query(pool: ConnectionPool, query: Callable[[], Cursor], q_id: str = Non
 
 def create_pool():
     pool = ConnectionPool(
-        conninfo=DB_URL
+        conninfo=DB_URL,
     )
     pool.wait()
     print('Pool created')
@@ -86,20 +84,22 @@ def select_query(cur: Cursor, fields: list[sql.Identifier], table_name: str, arg
         extra_query['args_dic'])
     query = sql.Composed(query_lst)
     try:
+        start_time = time.time()
         cur.execute(
             query,
             args_dic
         )
-
-    except:
+        end_time = time.time()
+        log_query(cur, query, args_dic, table_name, 'select', end_time - start_time)
+        if (count):
+            result = cur.fetchall()
+        else:
+            result = cur.fetchone()
+        return result
+    except Exception as e:
         cur1 = ClientCursor(cur.connection)
         print('query failed', cur1.mogrify(query, args_dic))
-    result = None
-    if (count):
-        result = cur.fetchall()
-    else:
-        result = cur.fetchone()
-    return result
+
 
 
 def query_append_check(query_lst: list):
@@ -138,19 +138,47 @@ def update_query(cur, args_dic, id, table_name):
         update_lst.append(sql.SQL('\nRETURNING id'))
         args_dic['id'] = id
         query =sql.Composed(update_lst)
+        start_time = time.time()
         cur.execute(
             query,
             args_dic
         )
+        end_time = time.time()
         result = cur.fetchone()
+        log_query(cur, query, args_dic, table_name, 'update', (end_time - start_time))
         cur.close()
         return result['id']
     except Exception as e:
         return None
 
+def post_query(cur, table_name, args_dic):
+    query = sql.SQL("""INSERT INTO {table}({cols}) VALUES ({values})RETURNING id;"""
+    ).format(
+            table=sql.Identifier(table_name),
+            cols=sql.SQL(", ").join(map(sql.Identifier, args_dic.keys())),
+            values=sql.SQL(",").join(map(sql.Placeholder, args_dic.keys()))
+        )
+    try:
+        start_time = time.time()
+        cur.execute(query, args_dic)
+        end_time = time.time()
+        log_query(cur, query, args_dic, table_name, 'post', end_time - start_time)
+        return cur.fetchone()['id']
+    except Exception as e:
+        cur1 = ClientCursor(cur.connection)
+        print('Error: ', e, args_dic)
+        return None
 def get_timings(id: str):
     with open("test.txt", "a") as myfile:
         myfile.write(id + '\n')
+
+
+def log_query(cur: Cursor, query: str, args_dic: dict, table_name: str, op: str, run_time: float):
+    cur1 = ClientCursor(cur.connection)
+    query = cur1.mogrify(query, args_dic)
+    x = str(op + ' ' + table_name + '||' + str(run_time) + '||' + query + '\n=========================\n')
+    with open("queries.csv", "a") as myfile:
+        myfile.write(x)
 
 def process_timings():
     with open("test.txt", "r") as myfile:
@@ -180,4 +208,22 @@ def process_timings():
             myfile.write(timing['id'] + ',' + str(timing['mean']) + ',' + str(timing['max']) + ',' + str(timing['timings']) + '\n')
 
 if __name__ == "__main__":
-    process_timings()
+    cleaned_queries = []
+    with open("queries.csv", "r") as myfile:
+        lines = myfile.read().split('\n=========================\n')
+        for datum in lines:
+            if(len(datum) < 1):
+                continue
+            op, run_time, query = datum.split('||')
+            query = query.strip()
+            query = ' '.join(query.split('\n'))
+            cleaned_queries.append({
+                'op': op,
+                'run_time': str(float(run_time) * 1000),
+                'query': query
+            })
+    with open("queries_cleaned.csv", "w") as myfile:
+        myfile.write('op,run_time,query\n')
+        for datum in cleaned_queries:
+            myfile.write(datum['op'] + '|' + datum['run_time'] + '|' + datum['query'] + '\n')
+
